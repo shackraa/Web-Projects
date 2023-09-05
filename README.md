@@ -1,2 +1,2 @@
 # Web-Projects 
-BU PROJE YILDIZ TEKNİK ÜNİVERSİTESİ SKYLAB KULÜBÜ WEB EKİBİ BAŞVURU ÖDEVİDİR.
+All the websites I have build so far.
