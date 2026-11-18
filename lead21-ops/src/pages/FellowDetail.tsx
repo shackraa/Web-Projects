@@ -64,7 +64,7 @@ export function FellowDetail() {
 
   // Start on overview: no module open until Erşen picks one
   const [openMod, setOpenMod] = useState<string | null>(null);
-  const [showOps, setShowOps] = useState(false);
+  const [showOps, setShowOps] = useState(true);
 
   const [planItemId, setPlanItemId] = useState(PLAN_ITEMS[0]?.id ?? "");
   const [at, setAt] = useState(new Date().toISOString().slice(0, 10));
