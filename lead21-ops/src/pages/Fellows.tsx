@@ -176,7 +176,7 @@ export function Fellows() {
                     </select>
                   </label>
                   <Link
-                    className="btn ghost sm"
+                    className={`btn sm ${f.low || f.issueCount ? "" : "ghost"}`}
                     to={`/mail?fellow=${encodeURIComponent(f.name)}`}
                     onClick={(e) => e.stopPropagation()}
                   >

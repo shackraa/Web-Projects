@@ -65,8 +65,12 @@ export function FellowDetail() {
   if (!meta) {
     return (
       <div className="page">
-        <p>Fellow bulunamadı.</p>
-        <Link to="/fellows">Listeye dön</Link>
+        <PageTitle title="Fellow yok" />
+        <Breadcrumbs items={[{ label: "Bu ay", to: "/" }, { label: "Fellow’lar", to: "/fellows" }, { label: "Bulunamadı" }]} />
+        <p className="lede">Bu isimde fellow yok.</p>
+        <Link className="btn" to="/fellows">
+          Listeye dön
+        </Link>
       </div>
     );
   }
@@ -97,11 +101,11 @@ export function FellowDetail() {
           </p>
         </div>
         <div className="toolbar">
-          <Link className="btn ghost" to={`/rapor`}>
+          <Link className="btn ghost" to={`/rapor?fellow=${encodeURIComponent(fellowName)}`}>
             Rapor
           </Link>
-          <Link className="btn ghost" to={`/mail?fellow=${encodeURIComponent(fellowName)}`}>
-            Mail
+          <Link className="btn" to={`/mail?fellow=${encodeURIComponent(fellowName)}`}>
+            Mail yaz
           </Link>
         </div>
       </header>

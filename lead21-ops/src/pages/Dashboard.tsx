@@ -22,6 +22,19 @@ import {
 } from "../lib/scoring";
 import { useStore } from "../state";
 
+const KIND_LABEL: Record<string, string> = {
+  baraj: "Baraj altı",
+  sorun: "Modül sorunu",
+  eksik: "Eksik teslim",
+  mentor: "Mentör",
+};
+
+const TASK_LABEL: Record<string, string> = {
+  gecikti: "Gecikti",
+  yapilmadi: "Yapılmadı",
+  yapildi: "Yapıldı",
+};
+
 export function Dashboard() {
   const {
     scores,
@@ -31,7 +44,6 @@ export function Dashboard() {
     activities,
     stages,
     mentors,
-    bumpWarn,
   } = useStore();
 
   const now = new Date();
@@ -144,10 +156,10 @@ export function Dashboard() {
           <ul className="list compact mt">
             {upcoming.map((d) => (
               <li key={d.id}>
-                <span>
-                  <strong>{d.title}</strong>
+                <Link to="/takvim">
+                  <strong className="pick-name">{d.title}</strong>
                   <i className="muted"> · {d.date}</i>
-                </span>
+                </Link>
                 <span className="badge">{d.kind}</span>
               </li>
             ))}
@@ -179,14 +191,13 @@ export function Dashboard() {
                   </Link>
                   <div className="intervene-actions">
                     <span className={`badge ${i.kind === "baraj" || i.kind === "sorun" ? "danger" : "warn"}`}>
-                      {i.kind}
+                      {KIND_LABEL[i.kind] ?? i.kind}
                     </span>
                     <Link
                       className="btn sm"
                       to={`/mail?fellow=${encodeURIComponent(i.fellow)}&chain=${i.mailChainId}${
                         i.planId ? `&plan=${i.planId}` : ""
-                      }&dose=${Math.min(3, (i.dose || 0) + 1)}`}
-                      onClick={() => bumpWarn(i.fellow)}
+                      }&dose=${Math.min(3, Math.max(1, (i.dose || 0) + 1))}`}
                     >
                       Yaz
                     </Link>
@@ -200,21 +211,30 @@ export function Dashboard() {
         <section className="panel">
           <div className="panel-head">
             <h2>Erşen hatırlatmaları</h2>
-            <Link to="/gorevler">Görevler</Link>
+            <Link to="/gorevler">Görevler →</Link>
           </div>
-          <ul className="list compact">
-            {opsTasks.map((t) => (
-              <li key={t.id}>
-                <div>
-                  <strong>{t.title}</strong>
-                  <span className="muted block tiny">{t.due}</span>
-                </div>
-                <span className={`badge ${t.status === "gecikti" ? "danger" : "warn"}`}>
-                  {t.status}
-                </span>
-              </li>
-            ))}
-          </ul>
+          {opsTasks.length === 0 ? (
+            <p className="muted">
+              Açık hatırlatma yok.{" "}
+              <Link className="name-link" to="/gorevler">
+                Görevlere git
+              </Link>
+            </p>
+          ) : (
+            <ul className="pick-list">
+              {opsTasks.map((t) => (
+                <li key={t.id} className="pick-row">
+                  <Link className="pick-main" to="/gorevler">
+                    <span className="pick-name">{t.title}</span>
+                    <span className="muted block tiny">{t.due}</span>
+                  </Link>
+                  <span className={`badge ${t.status === "gecikti" ? "danger" : "warn"}`}>
+                    {TASK_LABEL[t.status] ?? t.status}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </div>
 

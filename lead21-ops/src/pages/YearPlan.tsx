@@ -1,17 +1,21 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Breadcrumbs } from "../components/Breadcrumbs";
+import { PageTitle } from "../components/PageTitle";
 import { FELLOWS_10, PLAN_ITEMS } from "../data/seed";
 import { fellowsDone, fellowsMissing, isDone, latestActivity, planByMonth } from "../lib/plan";
 import { useStore } from "../state";
 
 export function YearPlan() {
   const { activities } = useStore();
-  const [openId, setOpenId] = useState<string | null>(PLAN_ITEMS.find((p) => p.due >= "2026-11-01")?.id ?? PLAN_ITEMS[0]?.id);
+  const today = new Date().toISOString().slice(0, 10);
+  const [openId, setOpenId] = useState<string | null>(PLAN_ITEMS.find((p) => p.due >= today)?.id ?? PLAN_ITEMS[0]?.id);
   const months = useMemo(() => planByMonth(), []);
-  const today = "2026-11-18";
 
   return (
     <div className="page">
+      <PageTitle title="Yıllık plan" />
+      <Breadcrumbs items={[{ label: "Bu ay", to: "/" }, { label: "Yıllık plan" }]} />
       <header className="page-head">
         <div>
           <p className="eyebrow">Yıllık plan</p>
@@ -129,6 +133,7 @@ function PlanDetail({ planItemId }: { planItemId: string }) {
       <h2>{item.title}</h2>
       <p className="muted">Deadline: {item.due}</p>
       <h3 className="subh">Yapanlar ({done.length})</h3>
+      {done.length === 0 ? <p className="muted">Henüz teslim yok.</p> : null}
       <ul className="list compact">
         {done.map((f) => {
           const a = latestActivity(activities, f, planItemId);

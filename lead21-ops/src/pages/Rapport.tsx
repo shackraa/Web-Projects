@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Breadcrumbs } from "../components/Breadcrumbs";
+import { PageTitle } from "../components/PageTitle";
 import { FELLOWS_10, PLAN_ITEMS } from "../data/seed";
 import { fellowCompletion, latestActivity } from "../lib/plan";
 import { barrierRatio, fellowTotal, pctLabel, underBarrier } from "../lib/scoring";
@@ -7,8 +9,17 @@ import { useStore } from "../state";
 
 export function Rapport() {
   const { activities, scores, bonuses, fellows } = useStore();
+  const [params] = useSearchParams();
   const [fellow, setFellow] = useState<string>("hepsi");
-  const asOf = "2026-11-18";
+  const asOf = new Date().toISOString().slice(0, 10);
+
+  useEffect(() => {
+    const q = params.get("fellow");
+    if (q) {
+      const name = decodeURIComponent(q);
+      if ((FELLOWS_10 as readonly string[]).includes(name)) setFellow(name);
+    }
+  }, [params]);
 
   const rows = useMemo(() => {
     const list = fellow === "hepsi" ? [...FELLOWS_10] : [fellow];
@@ -66,12 +77,14 @@ export function Rapport() {
 
   return (
     <div className="page">
+      <PageTitle title="Rapor" />
+      <Breadcrumbs items={[{ label: "Bu ay", to: "/" }, { label: "Rapor" }]} />
       <header className="page-head">
         <div>
           <p className="eyebrow">Fellow rapor</p>
           <h1>Kim ne yapmış?</h1>
           <p className="lede">
-            Bugüne kadar (demo: {asOf}) beklenen kalemlere göre teslim oranı, eksikler ve zaman çizelgesi.
+            Bugüne kadar ({asOf}) beklenen kalemlere göre teslim oranı, eksikler ve zaman çizelgesi.
           </p>
         </div>
         <div className="toolbar">
@@ -104,9 +117,9 @@ export function Rapport() {
             {rows.map((r) => (
               <tr key={r.name} className={r.missing.length > 2 || r.low ? "row-warn" : undefined}>
                 <td>
-                  <button type="button" className="linkish name-linkish" onClick={() => setFellow(r.name)}>
+                  <Link className="name-link" to={`/fellows/${encodeURIComponent(r.name)}`}>
                     {r.name}
-                  </button>
+                  </Link>
                 </td>
                 <td className="mono">
                   {r.doneCount}/{r.dueCount} ({Math.round(r.ratio * 100)}%)

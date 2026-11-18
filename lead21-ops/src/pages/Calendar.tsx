@@ -1,3 +1,6 @@
+import { Link } from "react-router-dom";
+import { Breadcrumbs } from "../components/Breadcrumbs";
+import { PageTitle } from "../components/PageTitle";
 import { MONTHLY_FLOW, SPECIAL_DATES } from "../data/seed";
 import { useStore } from "../state";
 
@@ -8,14 +11,19 @@ export function CalendarPage() {
 
   return (
     <div className="page">
+      <PageTitle title="Takvim" />
+      <Breadcrumbs items={[{ label: "Bu ay", to: "/" }, { label: "Takvim" }]} />
       <header className="page-head">
         <div>
           <p className="eyebrow">Takvim</p>
           <h1>Program akışı</h1>
           <p className="lede">
-            xlsx aylık akış + Notion/Erşen özel tarihler. Geciken görevler ay bazında görünür.
+            Aylık akış, özel tarihler ve geciken görevler. Bu ay kırmızı çerçeveyle işaretli.
           </p>
         </div>
+        <Link className="btn ghost" to="/gorevler">
+          Görevler
+        </Link>
       </header>
 
       <div className="month-grid">
@@ -30,9 +38,9 @@ export function CalendarPage() {
 
           return (
             <article key={m.month} className={`month-card ${isNow ? "is-now" : ""}`}>
-              <header>
+              <header className="month-card-head">
                 <h2>{m.month}</h2>
-                {isNow && <span className="badge">bu ay</span>}
+                {isNow && <span className="badge ok">bu ay</span>}
                 {overdue > 0 && <span className="badge warn">{overdue} geciken</span>}
               </header>
               <ul className="flow-items">
@@ -57,8 +65,13 @@ export function CalendarPage() {
                   <h3>Görevler</h3>
                   <ul>
                     {monthTasks.map((t) => (
-                      <li key={t.id} className={`task-pill ${t.status}`}>
-                        {t.due.slice(8)}. {t.title}
+                      <li key={t.id}>
+                        <Link
+                          className={`task-pill ${t.status}`}
+                          to="/gorevler"
+                        >
+                          {t.due.slice(8)}. {t.title}
+                        </Link>
                       </li>
                     ))}
                   </ul>

@@ -139,7 +139,9 @@ export function Scores() {
             {rows.map((r) => (
               <tr key={r.name} className={r.low ? "row-warn" : undefined}>
                 <td>
-                  <Link to={`/fellows/${encodeURIComponent(r.name)}`}>{r.name}</Link>
+                  <Link className="name-link" to={`/fellows/${encodeURIComponent(r.name)}`}>
+                    {r.name}
+                  </Link>
                 </td>
                 <td className="mono">{r.total}</td>
                 <td className="mono">{r.bonus || "—"}</td>

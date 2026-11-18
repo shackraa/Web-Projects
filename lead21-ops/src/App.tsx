@@ -1,4 +1,4 @@
-import { NavLink, Route, Routes } from "react-router-dom";
+import { NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { PERIOD, TOTAL_IDEAL } from "./data/seed";
 import { CalendarPage } from "./pages/Calendar";
 import { Dashboard } from "./pages/Dashboard";
@@ -25,9 +25,45 @@ const NAV = [
   { to: "/rapor", label: "Rapor" },
   { to: "/gorevler", label: "Görevler" },
   { to: "/takvim", label: "Takvim" },
-  { to: "/sss", label: "SSS" },
-  { to: "/gizlilik", label: "Gizlilik" },
 ];
+
+function StickyCta() {
+  const { pathname } = useLocation();
+  if (pathname.startsWith("/mail")) {
+    return (
+      <div className="sticky-cta" aria-label="Hızlı aksiyon">
+        <NavLink className="btn" to="/#mudahale">
+          Müdahale
+        </NavLink>
+        <NavLink className="btn ghost" to="/">
+          Bu ay
+        </NavLink>
+      </div>
+    );
+  }
+  if (pathname.startsWith("/fellows/")) {
+    return (
+      <div className="sticky-cta" aria-label="Hızlı aksiyon">
+        <NavLink className="btn" to={`/mail?fellow=${encodeURIComponent(decodeURIComponent(pathname.split("/").pop() || ""))}`}>
+          Mail yaz
+        </NavLink>
+        <NavLink className="btn ghost" to="/fellows">
+          Liste
+        </NavLink>
+      </div>
+    );
+  }
+  return (
+    <div className="sticky-cta" aria-label="Hızlı aksiyon">
+      <NavLink className="btn" to="/#mudahale">
+        Müdahale
+      </NavLink>
+      <NavLink className="btn ghost" to="/mail">
+        Mail
+      </NavLink>
+    </div>
+  );
+}
 
 export default function App() {
   const { resetDemo } = useStore();
@@ -40,8 +76,6 @@ export default function App() {
           <span className="brand-sub">Ops · {PERIOD.name}</span>
         </NavLink>
         <p className="side-note">
-          Bu ay · müdahale · mentör
-          <br />
           Ideal {TOTAL_IDEAL} · baraj %80
         </p>
         <nav className="nav">
@@ -56,10 +90,20 @@ export default function App() {
             </NavLink>
           ))}
         </nav>
-        <button type="button" className="btn ghost reset" onClick={resetDemo}>
+        <button
+          type="button"
+          className="btn ghost reset"
+          onClick={() => {
+            if (window.confirm("Demo veriyi sıfırlamak istediğine emin misin?")) resetDemo();
+          }}
+        >
           Demo veriyi sıfırla
         </button>
-        <p className="side-foot">Yeni Bir Lider · aşama → puan</p>
+        <p className="side-foot">
+          <NavLink to="/sss">SSS</NavLink>
+          {" · "}
+          <NavLink to="/gizlilik">Gizlilik</NavLink>
+        </p>
       </aside>
       <main className="main">
         <Routes>
@@ -78,14 +122,7 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
-      <div className="sticky-cta" aria-label="Hızlı aksiyon">
-        <NavLink className="btn" to="/mail">
-          Mail
-        </NavLink>
-        <NavLink className="btn ghost" to="/">
-          Bu ay
-        </NavLink>
-      </div>
+      <StickyCta />
     </div>
   );
 }

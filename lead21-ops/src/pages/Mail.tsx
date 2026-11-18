@@ -10,23 +10,16 @@ export function MailPage() {
   const { fellows, activities, mailLog, addMailLog, bumpWarn } = useStore();
   const [params] = useSearchParams();
   const [mode, setMode] = useState<"zincir" | "tek">("zincir");
-  const [chainId, setChainId] = useState(
-    () => params.get("chain") ?? MAIL_CHAINS[0].id,
-  );
-  const [stepLevel, setStepLevel] = useState(() => {
-    const d = Number(params.get("dose") ?? "1");
-    return Math.min(3, Math.max(1, Number.isFinite(d) ? d : 1));
-  });
+  const [chainId, setChainId] = useState(MAIL_CHAINS[0].id);
+  const [stepLevel, setStepLevel] = useState(1);
   const [templateId, setTemplateId] = useState<string>(MAIL_TEMPLATES[0].id);
-  const [planId, setPlanId] = useState(params.get("plan") ?? PLAN_ITEMS[0]?.id ?? "");
-  const [selected, setSelected] = useState<string[]>(() => {
-    const f = params.get("fellow");
-    return f ? [decodeURIComponent(f)] : [];
-  });
+  const [planId, setPlanId] = useState(PLAN_ITEMS[0]?.id ?? "");
+  const [selected, setSelected] = useState<string[]>([]);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [msgTone, setMsgTone] = useState<"ok" | "warn" | "danger">("ok");
 
   const chain = MAIL_CHAINS.find((c) => c.id === chainId) ?? MAIL_CHAINS[0];
   const step = chain.steps.find((s) => s.level === stepLevel) ?? chain.steps[0];
@@ -37,6 +30,24 @@ export function MailPage() {
     () => (planId ? fellowsMissing(activities, planId) : []),
     [activities, planId],
   );
+
+  // Sync from URL whenever Erşen comes from Bu ay / Fellow “Yaz”
+  useEffect(() => {
+    const fellow = params.get("fellow");
+    const chainQ = params.get("chain");
+    const planQ = params.get("plan");
+    const doseQ = params.get("dose");
+    if (fellow) setSelected([decodeURIComponent(fellow)]);
+    if (chainQ && MAIL_CHAINS.some((c) => c.id === chainQ)) {
+      setChainId(chainQ);
+      setMode("zincir");
+    }
+    if (planQ && PLAN_ITEMS.some((p) => p.id === planQ)) setPlanId(planQ);
+    if (doseQ) {
+      const d = Number(doseQ);
+      if (Number.isFinite(d)) setStepLevel(Math.min(3, Math.max(1, d)));
+    }
+  }, [params]);
 
   function applyContent(toFellow?: string) {
     const isim = toFellow ?? selected[0] ?? "Fellow";
@@ -57,7 +68,7 @@ export function MailPage() {
   useEffect(() => {
     applyContent();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, chainId, stepLevel, templateId, planId]);
+  }, [mode, chainId, stepLevel, templateId, planId, selected[0]]);
 
   function toggle(name: string) {
     setSelected((prev) => (prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name]));
@@ -66,6 +77,7 @@ export function MailPage() {
   async function send() {
     if (!selected.length) {
       setMsg("Alıcı seç.");
+      setMsgTone("warn");
       return;
     }
     setBusy(true);
@@ -77,19 +89,20 @@ export function MailPage() {
         kalem: plan?.title,
         deadline: plan?.due,
       };
+      // Edited subject/body are the source of truth (per-recipient name fill on template fallback)
       const sub =
-        mode === "zincir"
+        subject.trim() ||
+        (mode === "zincir"
           ? fillTemplate(step.subject, vars)
-          : fillTemplate(subject || tpl.subject, vars);
+          : fillTemplate(tpl.subject, vars));
       const bod =
-        mode === "zincir"
-          ? fillTemplate(step.body, vars)
-          : fillTemplate(body || tpl.body, vars);
+        body.trim() ||
+        (mode === "zincir" ? fillTemplate(step.body, vars) : fillTemplate(tpl.body, vars));
       return {
         to: meta?.email ?? `${name}@ornek.lead21`,
         name,
-        subject: sub,
-        body: bod,
+        subject: sub.includes("{isim}") ? fillTemplate(sub, vars) : sub,
+        body: bod.includes("{isim}") ? fillTemplate(bod, vars) : bod,
       };
     });
 
@@ -119,13 +132,18 @@ export function MailPage() {
         });
         bumpWarn(p.name);
       }
-      setMsg(
-        sendMode === "gonderildi"
-          ? `${payloads.length} mail gönderildi.`
-          : sendMode === "hata"
-            ? `Gönderim hatası: ${data.detail ?? res.status}`
-            : `${payloads.length} mail örnek moda · ${mode === "zincir" ? `Mario L${step.level}` : "şablon"} (Resend yok).`,
-      );
+      if (sendMode === "gonderildi") {
+        setMsgTone("ok");
+        setMsg(`${payloads.length} mail gönderildi. Uyarı dozu +1.`);
+      } else if (sendMode === "hata") {
+        setMsgTone("danger");
+        setMsg(`Gönderim hatası: ${data.detail ?? res.status}`);
+      } else {
+        setMsgTone("warn");
+        setMsg(
+          `${payloads.length} mail örnek moda kaydedildi (Resend bağlı değil). Doz yine +1 — gerçek gönderim için secret ekle.`,
+        );
+      }
     } catch (e) {
       for (const p of payloads) {
         addMailLog({
@@ -138,7 +156,8 @@ export function MailPage() {
         });
         bumpWarn(p.name);
       }
-      setMsg("API yok — örnek log. Resend bağlanınca gerçek gönderim açılır.");
+      setMsgTone("warn");
+      setMsg("API yok — örnek log kaydedildi. Resend bağlanınca gerçek gönderim açılır.");
     } finally {
       setBusy(false);
     }
@@ -153,23 +172,23 @@ export function MailPage() {
           <p className="eyebrow">İletişim</p>
           <h1>Aşamalı uyarı maili</h1>
           <p className="lede">
-            Nazik, net, disiplin — üç seviye. Her gönderimde doz artar. Resend yoksa örnek log.
+            Nazik → net → disiplin. Metni düzenleyebilirsin; gönderimde doz artar.
           </p>
         </div>
         <div className="toolbar">
           <button
             type="button"
-            className={`chip ${mode === "zincir" ? "on" : ""}`}
+            className={`chip ${mode === "zincir" ? "active" : ""}`}
             onClick={() => setMode("zincir")}
           >
-            Zincir
+            Aşamalı uyarı
           </button>
           <button
             type="button"
-            className={`chip ${mode === "tek" ? "on" : ""}`}
+            className={`chip ${mode === "tek" ? "active" : ""}`}
             onClick={() => setMode("tek")}
           >
-            Tek şablon
+            Hazır şablon
           </button>
         </div>
       </header>
@@ -197,13 +216,13 @@ export function MailPage() {
             {FELLOWS_10.map((f) => {
               const meta = fellows.find((x) => x.name === f);
               return (
-                <label key={f} className="check">
+                <label key={f} className={`check recipient ${selected.includes(f) ? "on" : ""}`}>
                   <input
                     type="checkbox"
                     checked={selected.includes(f)}
                     onChange={() => toggle(f)}
                   />
-                  {f}
+                  <span>{f}</span>
                   {(meta?.warnCount ?? 0) > 0 && (
                     <span className="muted tiny"> · doz {meta?.warnCount}</span>
                   )}
@@ -214,7 +233,7 @@ export function MailPage() {
         </section>
 
         <section className="panel">
-          <h2>{mode === "zincir" ? "Zincir adımı" : "Şablon"}</h2>
+          <h2>{mode === "zincir" ? "Uyarı seviyesi" : "Şablon"}</h2>
           <div className="form-col">
             {mode === "zincir" ? (
               <>
@@ -237,7 +256,7 @@ export function MailPage() {
                       className={`mario-step ${stepLevel === s.level ? "active" : ""}`}
                       onClick={() => setStepLevel(s.level)}
                     >
-                      <span className="mario-lvl">L{s.level}</span>
+                      <span className="mario-lvl">Seviye {s.level}</span>
                       {s.label}
                     </button>
                   ))}
@@ -264,7 +283,7 @@ export function MailPage() {
               ))}
             </select>
             <button type="button" className="btn ghost" onClick={() => applyContent()}>
-              Metni yenile
+              Metni şablondan yenile
             </button>
             <input
               className="input"
@@ -280,9 +299,9 @@ export function MailPage() {
               onChange={(e) => setBody(e.target.value)}
             />
             <button type="button" className="btn" disabled={busy} onClick={send}>
-              {busy ? "Gönderiliyor…" : "Gönder / kaydet (+doz)"}
+              {busy ? "Gönderiliyor…" : "Gönder (doz +1)"}
             </button>
-            {msg && <p className="muted">{msg}</p>}
+            {msg && <p className={`send-banner ${msgTone}`}>{msg}</p>}
           </div>
         </section>
       </div>
@@ -305,7 +324,7 @@ export function MailPage() {
                 <span
                   className={`badge ${m.mode === "gonderildi" ? "ok" : m.mode === "hata" ? "danger" : "warn"}`}
                 >
-                  {m.mode}
+                  {m.mode === "gonderildi" ? "gönderildi" : m.mode === "hata" ? "hata" : "örnek"}
                 </span>
               </li>
             ))}

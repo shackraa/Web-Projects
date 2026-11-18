@@ -88,85 +88,95 @@ export function MentorsPage() {
         </label>
       </div>
 
-      <div className="table-wrap">
-        <table className="table dense">
-          <thead>
-            <tr>
-              <th>Fellow</th>
-              <th>Tür</th>
-              <th>Mentör</th>
-              <th>Pipeline</th>
-              <th>Hedef</th>
-              <th>Durum</th>
-              <th>Not</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((m) => {
-              const late = m.status !== "yapildi" && m.targetAt < today;
-              return (
-                <tr key={m.id} className={m.status === "sorun" || late ? "row-warn" : undefined}>
-                  <td>
-                    <Link className="name-link" to={`/fellows/${encodeURIComponent(m.fellow)}`}>
-                      {m.fellow}
-                    </Link>
-                    <span className="muted block tiny">
-                      doz #{fellows.find((f) => f.name === m.fellow)?.warnCount ?? 0}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="badge">{m.kind}</span>
-                  </td>
-                  <td>{m.mentorName}</td>
-                  <td className="tiny">
-                    {m.pipeline === "dogrudan" ? "doğrudan" : "iletişimci"}
-                  </td>
-                  <td className="mono tiny">
-                    {m.targetAt}
-                    {late ? " !" : ""}
-                  </td>
-                  <td>
-                    <select
-                      className="select sm"
-                      value={m.status}
-                      onChange={(e) =>
-                        setMentorStatus(m.id, e.target.value as MentorStatus, {
-                          note: e.target.value === "sorun" ? m.note || "Sorun" : m.note,
-                        })
-                      }
-                    >
-                      <option value="bekliyor">bekliyor</option>
-                      <option value="eslesti">eşleşti</option>
-                      <option value="planlandi">planlandı</option>
-                      <option value="yapildi">yapıldı</option>
-                      <option value="sorun">sorun</option>
-                    </select>
-                  </td>
-                  <td className="tiny">{m.note || "—"}</td>
-                  <td>
-                    {m.status !== "yapildi" && (
-                      <button
-                        type="button"
-                        className="btn ghost sm"
-                        onClick={() => setMentorStatus(m.id, "yapildi")}
+      {rows.length === 0 ? (
+        <p className="panel muted">
+          Filtreye uyan mentör kaydı yok.{" "}
+          <button type="button" className="btn ghost sm" onClick={() => setOnlyOpen(false)}>
+            Tümünü göster
+          </button>
+        </p>
+      ) : (
+        <div className="table-wrap">
+          <table className="table dense">
+            <thead>
+              <tr>
+                <th>Fellow</th>
+                <th>Tür</th>
+                <th>Mentör</th>
+                <th>Pipeline</th>
+                <th>Hedef</th>
+                <th>Durum</th>
+                <th>Not</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((m) => {
+                const late = m.status !== "yapildi" && m.targetAt < today;
+                const urgent = m.status === "sorun" || late;
+                return (
+                  <tr key={m.id} className={urgent ? "row-warn" : undefined}>
+                    <td>
+                      <Link className="name-link" to={`/fellows/${encodeURIComponent(m.fellow)}`}>
+                        {m.fellow}
+                      </Link>
+                      <span className="muted block tiny">
+                        doz #{fellows.find((f) => f.name === m.fellow)?.warnCount ?? 0}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="badge">{m.kind}</span>
+                    </td>
+                    <td>{m.mentorName}</td>
+                    <td className="tiny">
+                      {m.pipeline === "dogrudan" ? "doğrudan" : "iletişimci"}
+                    </td>
+                    <td className="mono tiny">
+                      {m.targetAt}
+                      {late ? " !" : ""}
+                    </td>
+                    <td>
+                      <select
+                        className="select sm"
+                        value={m.status}
+                        onChange={(e) =>
+                          setMentorStatus(m.id, e.target.value as MentorStatus, {
+                            note: e.target.value === "sorun" ? m.note || "Sorun" : m.note,
+                          })
+                        }
                       >
-                        Yapıldı
-                      </button>
-                    )}
-                    <Link
-                      className="btn ghost sm"
-                      to={`/mail?fellow=${encodeURIComponent(m.fellow)}&chain=mentor-mario`}
-                    >
-                      Mail
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                        <option value="bekliyor">bekliyor</option>
+                        <option value="eslesti">eşleşti</option>
+                        <option value="planlandi">planlandı</option>
+                        <option value="yapildi">yapıldı</option>
+                        <option value="sorun">sorun</option>
+                      </select>
+                    </td>
+                    <td className="tiny">{m.note || "—"}</td>
+                    <td className="mentor-actions">
+                      {m.status !== "yapildi" && (
+                        <button
+                          type="button"
+                          className="btn ghost sm"
+                          onClick={() => setMentorStatus(m.id, "yapildi")}
+                        >
+                          Yapıldı
+                        </button>
+                      )}
+                      <Link
+                        className={`btn sm ${urgent ? "" : "ghost"}`}
+                        to={`/mail?fellow=${encodeURIComponent(m.fellow)}&chain=mentor-mario`}
+                      >
+                        Mail
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <p className="muted tiny mt">
         {FELLOWS_10.length} fellow · {mentors.length} eşleşme kaydı (1. + 2. görüşme).
