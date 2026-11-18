@@ -1,10 +1,12 @@
-const KEY = "lead21-ops-v2";
+const KEY = "lead21-ops-v3";
 
 export type Persisted = {
   scores: Record<string, Record<string, number>>;
   bonuses: import("../data/seed").BonusEntry[];
   tasks: import("../data/seed").OpsTask[];
   fellows: import("../data/seed").FellowMeta[];
+  activities: import("../data/seed").Activity[];
+  mailLog: import("../data/seed").MailLog[];
 };
 
 export function loadState(): Partial<Persisted> | null {
@@ -27,4 +29,5 @@ export function saveState(state: Persisted): void {
 
 export function clearState(): void {
   localStorage.removeItem(KEY);
+  localStorage.removeItem("lead21-ops-v2");
 }

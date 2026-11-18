@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { PERIOD, SPECIAL_DATES, TOTAL_IDEAL } from "../data/seed";
+import { PERIOD, PLAN_ITEMS, SPECIAL_DATES, TOTAL_IDEAL } from "../data/seed";
+import { fellowCompletion, fellowsMissing } from "../lib/plan";
 import {
   barrierRatio,
   fellowTotal,
@@ -10,9 +11,21 @@ import {
 import { FELLOWS_10, useStore } from "../state";
 
 export function Dashboard() {
-  const { scores, bonuses, tasks, fellows } = useStore();
+  const { scores, bonuses, tasks, fellows, activities } = useStore();
   const today = new Date().toISOString().slice(0, 10);
   const avg = teamAverage(scores, bonuses, FELLOWS_10);
+  const hotPlan = PLAN_ITEMS.filter((p) => p.due <= today)
+    .map((p) => ({ ...p, missing: fellowsMissing(activities, p.id).length }))
+    .filter((p) => p.missing > 0)
+    .sort((a, b) => b.missing - a.missing)
+    .slice(0, 5);
+  const lowCompletion = FELLOWS_10.map((f) => ({
+    name: f,
+    ...fellowCompletion(activities, f, today),
+  }))
+    .filter((f) => f.missing.length > 0)
+    .sort((a, b) => a.ratio - b.ratio)
+    .slice(0, 5);
 
   const under = FELLOWS_10.filter((f) =>
     underBarrier(fellowTotal(scores[f], bonuses, f)),
@@ -118,32 +131,55 @@ export function Dashboard() {
 
         <section className="panel">
           <div className="panel-head">
-            <h2>Fellow özeti</h2>
-            <Link to="/fellows">CRM →</Link>
+            <h2>Teslim eksiği (plan)</h2>
+            <Link to="/plan">Yıllık plan →</Link>
           </div>
-          <p className="muted">
-            {fellows.length} fellow · örnek veri localStorage’da tutulur. Bonus ve puan
-            düzenlemeleri anında yansır.
-          </p>
+          {hotPlan.length === 0 ? (
+            <p className="muted">Geçmiş kalemlerde eksik yok.</p>
+          ) : (
+            <ul className="list">
+              {hotPlan.map((p) => (
+                <li key={p.id}>
+                  <div>
+                    <strong>{p.title}</strong>
+                    <span className="muted block">{p.due}</span>
+                  </div>
+                  <span className="badge danger">{p.missing} eksik</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="panel">
+          <div className="panel-head">
+            <h2>Fellow özeti</h2>
+            <Link to="/rapor">Rapor →</Link>
+          </div>
+          <p className="muted">{fellows.length} fellow · puan + teslim oranı</p>
           <div className="mini-bars">
-            {FELLOWS_10.slice(0, 8).map((f) => {
-              const tot = fellowTotal(scores[f], bonuses, f);
+            {lowCompletion.map((f) => {
+              const tot = fellowTotal(scores[f.name], bonuses, f.name);
               const r = barrierRatio(tot);
               return (
-                <div key={f} className="mini-bar-row">
-                  <span>{f.split(" ")[0]}</span>
+                <div key={f.name} className="mini-bar-row">
+                  <span>{f.name.split(" ")[0]}</span>
                   <div className="bar-track">
                     <div
                       className={`bar-fill ${underBarrier(tot) ? "is-low" : ""}`}
-                      style={{ width: `${Math.min(100, r * 100)}%` }}
+                      style={{ width: `${Math.min(100, f.ratio * 100)}%` }}
                     />
-                    <i className="bar-mark" style={{ left: "80%" }} />
                   </div>
-                  <span className="mono">{pctLabel(r)}</span>
+                  <span className="mono">
+                    {Math.round(f.ratio * 100)}% · {pctLabel(r)}
+                  </span>
                 </div>
               );
             })}
           </div>
+          <Link className="btn ghost mt" to="/mail">
+            Mail kuyruğu →
+          </Link>
         </section>
       </div>
     </div>

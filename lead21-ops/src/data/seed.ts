@@ -348,3 +348,128 @@ export function seedFellowMeta(): FellowMeta[] {
       .replace(/\s+/g, ".")}@ornek.lead21`,
   }));
 }
+
+/** Yıllık plan — fellow teslim / katılım kalemleri */
+export type PlanItem = {
+  id: string;
+  title: string;
+  due: string;
+  month: number;
+  kind: string;
+  pointsCode?: string;
+};
+
+export const PLAN_ITEMS: PlanItem[] = [
+  { id: "p-base", title: "Base katılım (4 gün)", due: "2026-01-15", month: 1, kind: "base", pointsCode: "base" },
+  { id: "p-hbs", title: "HBS CV teslimi", due: "2026-02-01", month: 2, kind: "kariyer", pointsCode: "kariyer" },
+  { id: "p-li", title: "LinkedIn eğitimi katılımı", due: "2026-02-10", month: 2, kind: "kariyer", pointsCode: "kariyer" },
+  { id: "p-slj-haz", title: "SLJ hazırlık teslimi", due: "2026-02-11", month: 2, kind: "slj", pointsCode: "slj" },
+  { id: "p-slj-kes", title: "SLJ keşif teslimi", due: "2026-02-25", month: 2, kind: "slj", pointsCode: "slj" },
+  { id: "p-slj-cp", title: "SLJ checkpoint — son karar raporu", due: "2026-03-04", month: 3, kind: "slj", pointsCode: "slj" },
+  { id: "p-talks-mar", title: "LEAD Talks (Mart) katılım", due: "2026-03-15", month: 3, kind: "talks", pointsCode: "lead_talks" },
+  { id: "p-ekip-mar", title: "Ekip içi görüşme (Mart)", due: "2026-03-31", month: 3, kind: "ekip", pointsCode: "ekip_ici" },
+  { id: "p-koc-1", title: "Koçluk seans 1", due: "2026-03-31", month: 3, kind: "kocluk", pointsCode: "kocluk" },
+  { id: "p-mentor-1", title: "Mentörlük 1. görüşme (LM/UDY/SM)", due: "2026-04-30", month: 4, kind: "mentor", pointsCode: "mentorluk" },
+  { id: "p-summit1", title: "Summit 1 katılım", due: "2026-04-18", month: 4, kind: "summit", pointsCode: "summit1" },
+  { id: "p-koc-2", title: "Koçluk seans 2", due: "2026-04-30", month: 4, kind: "kocluk", pointsCode: "kocluk" },
+  { id: "p-slj-fin", title: "SLJ final / tamamlandı", due: "2026-06-15", month: 6, kind: "slj", pointsCode: "slj" },
+  { id: "p-koc-4", title: "Koçluk seans 4 (son)", due: "2026-06-30", month: 6, kind: "kocluk", pointsCode: "kocluk" },
+  { id: "p-duyuru", title: "11. dönem duyuru desteği", due: "2026-07-19", month: 7, kind: "duyuru", pointsCode: "duyuru" },
+  { id: "p-ai", title: "AI seansları tamamlandı", due: "2026-08-15", month: 8, kind: "ai", pointsCode: "ai" },
+  { id: "p-fin", title: "Finansal okuryazarlık seansları", due: "2026-08-31", month: 8, kind: "finansal", pointsCode: "finansal" },
+  { id: "p-sektor", title: "Sektörel derinleşme — final rapor", due: "2026-11-30", month: 11, kind: "sektorel", pointsCode: "sektorel" },
+  { id: "p-mentor-2", title: "Mentörlük 2. görüşme", due: "2026-10-31", month: 10, kind: "mentor", pointsCode: "mentorluk" },
+  { id: "p-summit2", title: "Summit 2 katılım", due: "2026-10-04", month: 10, kind: "summit", pointsCode: "summit2" },
+  { id: "p-demo", title: "Sosyal etki demo day", due: "2026-10-15", month: 10, kind: "slj", pointsCode: "slj" },
+  { id: "p-summit3", title: "Summit 3 katılım", due: "2026-12-19", month: 12, kind: "summit", pointsCode: "summit3" },
+  { id: "p-gelistir", title: "Geliştirme görüşmesi", due: "2026-12-20", month: 12, kind: "gelistirme", pointsCode: "gelistirme" },
+];
+
+export type ActivityStatus = "teslim" | "kismi" | "yok";
+
+export type Activity = {
+  id: string;
+  fellow: string;
+  planItemId: string;
+  at: string;
+  evidence?: string;
+  note?: string;
+  status: ActivityStatus;
+};
+
+export type MailLog = {
+  id: string;
+  at: string;
+  to: string[];
+  subject: string;
+  body: string;
+  mode: "gonderildi" | "ornek" | "hata";
+  detail?: string;
+};
+
+/** Demo teslimler — çoğu fellow geçmiş kalemleri tamamlamış, birkaç eksik */
+export function seedActivities(): Activity[] {
+  const out: Activity[] = [];
+  let n = 0;
+  const past = PLAN_ITEMS.filter((p) => p.due <= "2026-11-18");
+  for (const fellow of FELLOWS_10) {
+    const fi = FELLOWS_10.indexOf(fellow);
+    for (const item of past) {
+      // 3 uyarı fellow bazı kalemleri kaçırır
+      const skip =
+        (fi === 2 || fi === 6 || fi === 14) &&
+        (item.id === "p-sektor" || item.id === "p-mentor-2" || item.id === "p-demo" || item.id === "p-slj-fin");
+      if (skip) continue;
+      // rastgele küçük eksikler
+      if ((fi + item.month) % 11 === 0 && item.kind === "talks") continue;
+      n += 1;
+      out.push({
+        id: `a-${n}`,
+        fellow,
+        planItemId: item.id,
+        at: item.due,
+        status: "teslim",
+        evidence: item.kind === "slj" ? "https://docs.google.com/document/d/ornek" : undefined,
+        note: item.kind === "summit" ? "Yoklama alındı" : undefined,
+      });
+    }
+  }
+  return out;
+}
+
+export const MAIL_TEMPLATES = [
+  {
+    id: "eksik",
+    label: "Eksik teslim hatırlatması",
+    subject: "LEAD21 — eksik teslim hatırlatması",
+    body: `Merhaba {{isim}},
+
+{{kalem}} için henüz teslim/katılım kaydı görünmüyor (deadline: {{deadline}}).
+
+Lütfen kanıt linkini veya kısa notu Erşen'e ilet.
+
+Teşekkürler,
+LEAD21 Ops`,
+  },
+  {
+    id: "baraj",
+    label: "%80 baraj uyarısı",
+    subject: "LEAD21 — puan barajı uyarısı",
+    body: `Merhaba {{isim}},
+
+Güncel puanın barajın (%80) altında. Kısa bir check-in yapalım; geciken teslimleri birlikte netleştirelim.
+
+Erşen`,
+  },
+  {
+    id: "deadline",
+    label: "Yaklaşan deadline",
+    subject: "LEAD21 — yaklaşan deadline",
+    body: `Merhaba {{isim}},
+
+Hatırlatma: {{kalem}} — {{deadline}}.
+
+LEAD21`,
+  },
+] as const;
+

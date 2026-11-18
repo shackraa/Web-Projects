@@ -11,10 +11,13 @@ import {
   DEFAULT_BONUSES,
   DEFAULT_TASKS,
   FELLOWS_10,
+  seedActivities,
   seedFellowMeta,
   seedScores,
+  type Activity,
   type BonusEntry,
   type FellowMeta,
+  type MailLog,
   type OpsTask,
   type TaskStatus,
 } from "./data/seed";
@@ -25,6 +28,8 @@ type Store = {
   bonuses: BonusEntry[];
   tasks: OpsTask[];
   fellows: FellowMeta[];
+  activities: Activity[];
+  mailLog: MailLog[];
   setScore: (fellow: string, code: string, value: number) => void;
   addBonus: (fellow: string, points: number, reason: string) => void;
   removeBonus: (id: string) => void;
@@ -32,6 +37,9 @@ type Store = {
   updateTask: (id: string, patch: Partial<OpsTask>) => void;
   addTask: (task: Omit<OpsTask, "id">) => void;
   updateFellow: (name: string, patch: Partial<FellowMeta>) => void;
+  upsertActivity: (activity: Omit<Activity, "id"> & { id?: string }) => void;
+  removeActivity: (id: string) => void;
+  addMailLog: (entry: Omit<MailLog, "id">) => void;
   resetDemo: () => void;
 };
 
@@ -51,25 +59,29 @@ function hydrateTasks(tasks: OpsTask[]): OpsTask[] {
   });
 }
 
-function initial(): Omit<Store, "setScore" | "addBonus" | "removeBonus" | "setTaskStatus" | "updateTask" | "addTask" | "updateFellow" | "resetDemo"> {
+function boot() {
   const saved = loadState();
   return {
     scores: saved?.scores ?? seedScores(),
     bonuses: saved?.bonuses ?? DEFAULT_BONUSES,
     tasks: hydrateTasks(saved?.tasks ?? DEFAULT_TASKS),
     fellows: saved?.fellows ?? seedFellowMeta(),
+    activities: saved?.activities ?? seedActivities(),
+    mailLog: saved?.mailLog ?? [],
   };
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [scores, setScores] = useState(() => initial().scores);
-  const [bonuses, setBonuses] = useState(() => initial().bonuses);
-  const [tasks, setTasks] = useState(() => initial().tasks);
-  const [fellows, setFellows] = useState(() => initial().fellows);
+  const [scores, setScores] = useState(() => boot().scores);
+  const [bonuses, setBonuses] = useState(() => boot().bonuses);
+  const [tasks, setTasks] = useState(() => boot().tasks);
+  const [fellows, setFellows] = useState(() => boot().fellows);
+  const [activities, setActivities] = useState(() => boot().activities);
+  const [mailLog, setMailLog] = useState(() => boot().mailLog);
 
   useEffect(() => {
-    saveState({ scores, bonuses, tasks, fellows });
-  }, [scores, bonuses, tasks, fellows]);
+    saveState({ scores, bonuses, tasks, fellows, activities, mailLog });
+  }, [scores, bonuses, tasks, fellows, activities, mailLog]);
 
   const setScore = useCallback((fellow: string, code: string, value: number) => {
     setScores((prev) => ({
@@ -81,13 +93,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const addBonus = useCallback((fellow: string, points: number, reason: string) => {
     setBonuses((prev) => [
       ...prev,
-      {
-        id: `b-${Date.now()}`,
-        fellow,
-        points,
-        reason,
-        at: todayISO(),
-      },
+      { id: `b-${Date.now()}`, fellow, points, reason, at: todayISO() },
     ]);
   }, []);
 
@@ -111,12 +117,41 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setFellows((prev) => prev.map((f) => (f.name === name ? { ...f, ...patch } : f)));
   }, []);
 
+  const upsertActivity = useCallback((activity: Omit<Activity, "id"> & { id?: string }) => {
+    setActivities((prev) => {
+      if (activity.id) {
+        return prev.map((a) => (a.id === activity.id ? { ...a, ...activity, id: activity.id } : a));
+      }
+      const existing = prev.find(
+        (a) => a.fellow === activity.fellow && a.planItemId === activity.planItemId,
+      );
+      if (existing) {
+        return prev.map((a) =>
+          a.id === existing.id ? { ...existing, ...activity, id: existing.id } : a,
+        );
+      }
+      return [...prev, { ...activity, id: `a-${Date.now()}` }];
+    });
+  }, []);
+
+  const removeActivity = useCallback((id: string) => {
+    setActivities((prev) => prev.filter((a) => a.id !== id));
+  }, []);
+
+  const addMailLog = useCallback((entry: Omit<MailLog, "id">) => {
+    setMailLog((prev) => [{ ...entry, id: `m-${Date.now()}` }, ...prev].slice(0, 80));
+  }, []);
+
   const resetDemo = useCallback(() => {
     clearState();
+    const fresh = boot();
     setScores(seedScores());
     setBonuses(DEFAULT_BONUSES);
     setTasks(hydrateTasks(DEFAULT_TASKS));
     setFellows(seedFellowMeta());
+    setActivities(seedActivities());
+    setMailLog([]);
+    void fresh;
   }, []);
 
   const value = useMemo(
@@ -125,6 +160,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       bonuses,
       tasks,
       fellows,
+      activities,
+      mailLog,
       setScore,
       addBonus,
       removeBonus,
@@ -132,6 +169,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateTask,
       addTask,
       updateFellow,
+      upsertActivity,
+      removeActivity,
+      addMailLog,
       resetDemo,
     }),
     [
@@ -139,6 +179,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       bonuses,
       tasks,
       fellows,
+      activities,
+      mailLog,
       setScore,
       addBonus,
       removeBonus,
@@ -146,6 +188,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateTask,
       addTask,
       updateFellow,
+      upsertActivity,
+      removeActivity,
+      addMailLog,
       resetDemo,
     ],
   );
