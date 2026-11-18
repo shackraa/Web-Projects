@@ -36,4 +36,10 @@ function mailApiPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [react(), mailApiPlugin()],
+  preview: {
+    host: "127.0.0.1",
+    port: 4173,
+    // Cloudflare quick tunnel / alternate public hosts
+    allowedHosts: true,
+  },
 });
