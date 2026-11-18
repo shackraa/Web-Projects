@@ -186,7 +186,7 @@ export function Dashboard() {
                     <span className="pick-name">{i.fellow}</span>
                     <span className="muted block tiny">
                       {i.reason} · {i.detail}
-                      {i.dose > 0 ? ` · doz #${i.dose}` : ""}
+                      {i.dose > 0 ? ` · uyarı ×${i.dose}` : ""}
                     </span>
                   </Link>
                   <div className="intervene-actions">

@@ -172,7 +172,8 @@ export function MailPage() {
           <p className="eyebrow">İletişim</p>
           <h1>Aşamalı uyarı maili</h1>
           <p className="lede">
-            Nazik → net → disiplin. Metni düzenleyebilirsin; gönderimde doz artar.
+            Nazik → net → disiplin. “Uyarı ×N” = bu fellow’a kaç kez müdahale maili
+            gitti; her gönderimde +1.
           </p>
         </div>
         <div className="toolbar">
@@ -215,17 +216,29 @@ export function MailPage() {
           <div className="recipient-grid">
             {FELLOWS_10.map((f) => {
               const meta = fellows.find((x) => x.name === f);
+              const dose = meta?.warnCount ?? 0;
+              const on = selected.includes(f);
               return (
-                <label key={f} className={`check recipient ${selected.includes(f) ? "on" : ""}`}>
+                <label key={f} className={`recipient-card ${on ? "on" : ""} ${dose ? "has-dose" : ""}`}>
                   <input
                     type="checkbox"
-                    checked={selected.includes(f)}
+                    className="sr-only"
+                    checked={on}
                     onChange={() => toggle(f)}
                   />
-                  <span>{f}</span>
-                  {(meta?.warnCount ?? 0) > 0 && (
-                    <span className="muted tiny"> · doz {meta?.warnCount}</span>
-                  )}
+                  <span className={`tick ${on ? "on" : ""}`} aria-hidden>
+                    {on ? "✓" : ""}
+                  </span>
+                  <span className="recipient-body">
+                    <span className="recipient-name">{f}</span>
+                    {dose > 0 ? (
+                      <span className="badge warn" title="Kaç kez uyarı maili gönderildi">
+                        uyarı ×{dose}
+                      </span>
+                    ) : (
+                      <span className="muted tiny">henüz uyarı yok</span>
+                    )}
+                  </span>
                 </label>
               );
             })}
@@ -299,7 +312,7 @@ export function MailPage() {
               onChange={(e) => setBody(e.target.value)}
             />
             <button type="button" className="btn" disabled={busy} onClick={send}>
-              {busy ? "Gönderiliyor…" : "Gönder (doz +1)"}
+              {busy ? "Gönderiliyor…" : "Gönder (uyarı sayacı +1)"}
             </button>
             {msg && <p className={`send-banner ${msgTone}`}>{msg}</p>}
           </div>

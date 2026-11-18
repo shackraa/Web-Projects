@@ -121,7 +121,7 @@ export function MentorsPage() {
                         {m.fellow}
                       </Link>
                       <span className="muted block tiny">
-                        doz #{fellows.find((f) => f.name === m.fellow)?.warnCount ?? 0}
+                        uyarı ×{fellows.find((f) => f.name === m.fellow)?.warnCount ?? 0}
                       </span>
                     </td>
                     <td>
