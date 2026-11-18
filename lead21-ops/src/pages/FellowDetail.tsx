@@ -32,6 +32,8 @@ export function FellowDetail() {
     upsertActivity,
     stages,
     setStageStatus,
+    mentors,
+    setMentorStatus,
   } = useStore();
   const meta = fellows.find((f) => f.name === fellowName);
   const row = scores[fellowName] ?? {};
@@ -346,6 +348,50 @@ export function FellowDetail() {
             Kaydet
           </button>
         </form>
+      </section>
+
+      <section className="panel mb">
+        <div className="panel-head">
+          <h2>Mentör eşleşmeleri</h2>
+          <Link className="btn ghost sm" to="/mentorler">
+            Tümü →
+          </Link>
+        </div>
+        {mentors.filter((m) => m.fellow === fellowName).length === 0 ? (
+          <p className="muted">Mentör kaydı yok.</p>
+        ) : (
+          <ul className="list compact">
+            {mentors
+              .filter((m) => m.fellow === fellowName)
+              .map((m) => (
+                <li key={m.id}>
+                  <div>
+                    <strong>
+                      {m.kind} · {m.mentorName}
+                    </strong>
+                    <span className="muted block tiny">
+                      hedef {m.targetAt}
+                      {m.note ? ` · ${m.note}` : ""} · {m.pipeline}
+                    </span>
+                  </div>
+                  <select
+                    className="select sm"
+                    value={m.status}
+                    onChange={(e) =>
+                      setMentorStatus(m.id, e.target.value as import("../data/seed").MentorStatus)
+                    }
+                  >
+                    <option value="bekliyor">bekliyor</option>
+                    <option value="eslesti">eşleşti</option>
+                    <option value="planlandi">planlandı</option>
+                    <option value="yapildi">yapıldı</option>
+                    <option value="sorun">sorun</option>
+                  </select>
+                </li>
+              ))}
+          </ul>
+        )}
+        <p className="muted tiny mt">Uyarı dozu: #{meta.warnCount ?? 0}</p>
       </section>
 
       <div className="grid-2">

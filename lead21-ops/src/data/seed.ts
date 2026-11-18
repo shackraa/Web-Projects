@@ -328,6 +328,8 @@ export type FellowMeta = {
   notes: string;
   email?: string;
   phone?: string;
+  /** Kaç kez uyarı / müdahale yapıldı (doz) */
+  warnCount?: number;
 };
 
 export function seedFellowMeta(): FellowMeta[] {
@@ -335,6 +337,7 @@ export function seedFellowMeta(): FellowMeta[] {
     name,
     status: i === 2 || i === 6 || i === 14 ? "uyari" : "aktif",
     notes: "",
+    warnCount: i === 2 || i === 6 || i === 14 ? 1 : 0,
     email: `${name
       .toLowerCase()
       .normalize("NFD")
@@ -348,6 +351,110 @@ export function seedFellowMeta(): FellowMeta[] {
       .replace(/\s+/g, ".")}@ornek.lead21`,
   }));
 }
+
+export type MentorKind = "LM" | "UDY" | "SM" | "Global";
+
+export type MentorStatus = "eslesti" | "planlandi" | "yapildi" | "sorun" | "bekliyor";
+
+export type MentorMatch = {
+  id: string;
+  fellow: string;
+  kind: MentorKind;
+  mentorName: string;
+  targetAt: string;
+  doneAt?: string;
+  status: MentorStatus;
+  note?: string;
+  /** Erşen: doğrudan CEO maili vs iletişimci loop */
+  pipeline: "dogrudan" | "iletisimci";
+};
+
+const MENTOR_NAMES: Record<MentorKind, string[]> = {
+  LM: ["Ayşe Yılmaz", "Can Demir", "Elif Kaya", "Murat Öz"],
+  UDY: ["Selim Arı", "Deniz Kurt", "Hande Acar", "Kerem Uslu"],
+  SM: ["Startup Mentor A", "Startup Mentor B", "Startup Mentor C", "Startup Mentor D"],
+  Global: ["Alex Chen", "Maria Lopez", "Omar Hassan", "Priya Shah"],
+};
+
+/** Fellow × LM/UDY/SM (+ Global örnek); sorunlu fellow’larda 2. görüşme aksar */
+export function seedMentors(): MentorMatch[] {
+  const out: MentorMatch[] = [];
+  let n = 0;
+  for (const fellow of FELLOWS_10) {
+    const fi = FELLOWS_10.indexOf(fellow);
+    const troubled = fi === 2 || fi === 6 || fi === 14;
+    const kinds: MentorKind[] = ["LM", "UDY", "SM"];
+    if (fi % 3 === 0) kinds.push("Global");
+    for (const kind of kinds) {
+      n += 1;
+      const namePool = MENTOR_NAMES[kind];
+      const mentorName = namePool[fi % namePool.length];
+      const round1Done = true;
+      const round2Target = kind === "Global" ? "2026-10-15" : "2026-10-31";
+      // 1. görüşme (Nisan)
+      out.push({
+        id: `ment-${n}-1`,
+        fellow,
+        kind,
+        mentorName,
+        targetAt: "2026-04-30",
+        doneAt: "2026-04-20",
+        status: "yapildi",
+        pipeline: kind === "Global" || fi % 2 === 0 ? "dogrudan" : "iletisimci",
+        note: round1Done ? "1. görüşme tamam" : undefined,
+      });
+      n += 1;
+      // 2. görüşme (Ekim)
+      let status: MentorStatus = troubled && (kind === "SM" || kind === "UDY") ? "sorun" : "planlandi";
+      if (!troubled && fi % 5 === 0) status = "yapildi";
+      out.push({
+        id: `ment-${n}-2`,
+        fellow,
+        kind,
+        mentorName,
+        targetAt: round2Target,
+        doneAt: status === "yapildi" ? "2026-10-18" : undefined,
+        status,
+        pipeline: kind === "Global" || fi % 2 === 0 ? "dogrudan" : "iletisimci",
+        note:
+          status === "sorun"
+            ? "2. görüşme ayarlanmadı — Eylül teması kaçtı"
+            : status === "planlandi"
+              ? "Takvim bekleniyor"
+              : undefined,
+      });
+    }
+  }
+  return out;
+}
+
+/** Bu ay şeridi — ay → kritik modül kodları */
+export const MONTH_MODULES: Record<number, string[]> = {
+  1: ["base"],
+  2: ["kariyer", "slj", "lead_talks", "kurucu_acilis"],
+  3: ["slj", "kocluk", "lead_talks", "ekip_ici"],
+  4: ["slj", "kocluk", "mentorluk", "lead_talks", "summit1", "ekip_ici"],
+  5: ["slj", "kocluk", "mentorluk", "lead_talks", "ekip_ici"],
+  6: ["kocluk", "duyuru", "mentorluk", "lead_talks", "ekip_ici"],
+  7: ["duyuru", "ai", "finansal", "mentorluk", "ekip_ici"],
+  8: ["mentorluk", "finansal", "ai", "ekip_ici"],
+  9: ["sektorel", "mentorluk", "lead_talks", "ekip_ici", "finansal"],
+  10: ["summit2", "slj", "sektorel", "lead_talks", "mentorluk"],
+  11: ["mentorluk", "lead_talks", "ekip_ici", "sektorel"],
+  12: ["summit3", "gelistirme", "kurucu_kapanis", "lead_talks", "base"],
+};
+
+/** Heatmap kolonları */
+export const HEATMAP_MODULES = [
+  "mentorluk",
+  "slj",
+  "sektorel",
+  "ekip_ici",
+  "lead_talks",
+  "summit2",
+  "kariyer",
+  "kocluk",
+] as const;
 
 /** Yıllık plan — fellow teslim / katılım kalemleri */
 export type PlanItem = {
@@ -615,4 +722,165 @@ Hatırlatma: {{kalem}} — {{deadline}}.
 LEAD21`,
   },
 ] as const;
+
+/** Super Mario — aşamalı mail zincirleri (Erşen dili) */
+export type MailChainStep = {
+  level: number;
+  label: string;
+  subject: string;
+  body: string;
+};
+
+export type MailChain = {
+  id: string;
+  label: string;
+  steps: MailChainStep[];
+};
+
+export const MAIL_CHAINS: MailChain[] = [
+  {
+    id: "eksik-mario",
+    label: "Eksik teslim — Super Mario",
+    steps: [
+      {
+        level: 1,
+        label: "Nazik hatırlatma",
+        subject: "LEAD21 — kısa hatırlatma: {{kalem}}",
+        body: `Merhaba {{isim}},
+
+{{kalem}} için kayıt henüz yok (deadline {{deadline}}). Kısa bir update yeter.
+
+Erşen`,
+      },
+      {
+        level: 2,
+        label: "Net uyarı",
+        subject: "LEAD21 — ikinci hatırlatma: {{kalem}}",
+        body: `Merhaba {{isim}},
+
+{{kalem}} hâlâ eksik. Bu tur puanı etkiliyor; bugün/yarın netleştirelim.
+
+Erşen`,
+      },
+      {
+        level: 3,
+        label: "Baraj / disiplin",
+        subject: "LEAD21 — son çağrı: {{kalem}}",
+        body: `Merhaba {{isim}},
+
+{{kalem}} için üçüncü yazım. %80 baraj ve summit katılımı risk altında. Lütfen hemen yaz.
+
+Erşen`,
+      },
+    ],
+  },
+  {
+    id: "baraj-mario",
+    label: "%80 baraj — Super Mario",
+    steps: [
+      {
+        level: 1,
+        label: "Check-in",
+        subject: "LEAD21 — puan check-in",
+        body: `Merhaba {{isim}},
+
+Puanın barajın altında görünüyor. 15 dk konuşalım mı?
+
+Erşen`,
+      },
+      {
+        level: 2,
+        label: "Aksiyon listesi",
+        subject: "LEAD21 — baraj için net aksiyonlar",
+        body: `Merhaba {{isim}},
+
+Baraj için öncelik: geciken teslimler + mentör/SLJ. Listeyi bu hafta kapatalım.
+
+Erşen`,
+      },
+      {
+        level: 3,
+        label: "Yaptırım sinyali",
+        subject: "LEAD21 — baraj ve summit",
+        body: `Merhaba {{isim}},
+
+%80 altına kalırsak summit/puan yaptırımı masada. Bu hafta toparlayalım.
+
+Erşen`,
+      },
+    ],
+  },
+  {
+    id: "disiplin-mario",
+    label: "Modül sorunu — dozajlı",
+    steps: [
+      {
+        level: 1,
+        label: "Soft",
+        subject: "LEAD21 — {{kalem}} takibi",
+        body: `Merhaba {{isim}},
+
+{{kalem}} tarafında bir takılma görünüyor. Ne lazım?
+
+Erşen`,
+      },
+      {
+        level: 2,
+        label: "Sert",
+        subject: "LEAD21 — {{kalem}} netleştirme",
+        body: `Merhaba {{isim}},
+
+{{kalem}} için deadline kaçmış durumda. Bugün cevap bekliyorum.
+
+Erşen`,
+      },
+      {
+        level: 3,
+        label: "Artistlik",
+        subject: "LEAD21 — son uyarı",
+        body: `Merhaba {{isim}},
+
+Bu üçüncü yazım. Program disiplinini bozan taraftayız; hemen toparla.
+
+Erşen`,
+      },
+    ],
+  },
+  {
+    id: "mentor-mario",
+    label: "Mentör görüşmesi",
+    steps: [
+      {
+        level: 1,
+        label: "Takvim iste",
+        subject: "LEAD21 — mentör görüşmesi takvimi",
+        body: `Merhaba {{isim}},
+
+Mentör 2. görüşme için tarih netleşsin. Mentörüne yazıp bana CC.
+
+Erşen`,
+      },
+      {
+        level: 2,
+        label: "Eylül kaçtı",
+        subject: "LEAD21 — mentör görüşmesi gecikmesi",
+        body: `Merhaba {{isim}},
+
+Ekim mentörü için Eylül temasını kaçırmışız. Bu hafta slot kilitle.
+
+Erşen`,
+      },
+      {
+        level: 3,
+        label: "Triple yasak",
+        subject: "LEAD21 — mentörlük kuralı",
+        body: `Merhaba {{isim}},
+
+Görüşmeleri üst üste yığmak (triple) yok. Planı düzgün yay.
+
+Erşen`,
+      },
+    ],
+  },
+];
 

@@ -1,6 +1,16 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { PERIOD, PLAN_ITEMS, SPECIAL_DATES, TOTAL_IDEAL } from "../data/seed";
-import { fellowCompletion, fellowsMissing } from "../lib/plan";
+import {
+  FELLOWS_10,
+  HEATMAP_MODULES,
+  MONTHLY_FLOW,
+  MONTH_MODULES,
+  PERIOD,
+  SCORE_CATEGORIES,
+  SPECIAL_DATES,
+  TOTAL_IDEAL,
+} from "../data/seed";
+import { buildInterventions, heatmapCell } from "../lib/interventions";
 import {
   barrierRatio,
   fellowTotal,
@@ -8,44 +18,68 @@ import {
   teamAverage,
   underBarrier,
 } from "../lib/scoring";
-import { FELLOWS_10, useStore } from "../state";
+import { useStore } from "../state";
 
 export function Dashboard() {
-  const { scores, bonuses, tasks, fellows, activities } = useStore();
-  const today = new Date().toISOString().slice(0, 10);
-  const avg = teamAverage(scores, bonuses, FELLOWS_10);
-  const hotPlan = PLAN_ITEMS.filter((p) => p.due <= today)
-    .map((p) => ({ ...p, missing: fellowsMissing(activities, p.id).length }))
-    .filter((p) => p.missing > 0)
-    .sort((a, b) => b.missing - a.missing)
-    .slice(0, 5);
-  const lowCompletion = FELLOWS_10.map((f) => ({
-    name: f,
-    ...fellowCompletion(activities, f, today),
-  }))
-    .filter((f) => f.missing.length > 0)
-    .sort((a, b) => a.ratio - b.ratio)
-    .slice(0, 5);
+  const {
+    scores,
+    bonuses,
+    tasks,
+    fellows,
+    activities,
+    stages,
+    mentors,
+    bumpWarn,
+  } = useStore();
 
+  const now = new Date();
+  const defaultMonth = now.getFullYear() === PERIOD.year ? now.getMonth() + 1 : 11;
+  const [month, setMonth] = useState(defaultMonth);
+
+  const flow = MONTHLY_FLOW.find((m) => m.monthKey === month) ?? MONTHLY_FLOW[10];
+  const monthMods = MONTH_MODULES[month] ?? [];
+  const today = now.toISOString().slice(0, 10);
+
+  const warnCounts = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const f of fellows) m[f.name] = f.warnCount ?? 0;
+    return m;
+  }, [fellows]);
+
+  const interventions = useMemo(
+    () =>
+      buildInterventions({
+        scores,
+        bonuses,
+        stages,
+        activities,
+        mentors,
+        warnCounts,
+        today,
+      }),
+    [scores, bonuses, stages, activities, mentors, warnCounts, today],
+  );
+
+  const avg = teamAverage(scores, bonuses, FELLOWS_10);
   const under = FELLOWS_10.filter((f) =>
     underBarrier(fellowTotal(scores[f], bonuses, f)),
-  ).map((f) => ({
-    name: f,
-    total: fellowTotal(scores[f], bonuses, f),
-    pct: barrierRatio(fellowTotal(scores[f], bonuses, f)),
-  }));
+  ).length;
 
-  const overdue = tasks.filter((t) => t.status === "gecikti" || (t.status !== "yapildi" && t.due < today));
-  const upcoming = SPECIAL_DATES.filter((d) => d.date >= today).slice(0, 5);
+  const opsTasks = tasks
+    .filter((t) => t.status !== "yapildi")
+    .sort((a, b) => a.due.localeCompare(b.due))
+    .slice(0, 6);
+
+  const upcoming = SPECIAL_DATES.filter((d) => d.date >= today).slice(0, 4);
 
   return (
     <div className="page">
       <header className="page-head">
         <div>
-          <p className="eyebrow">Erşen paneli · {PERIOD.name}</p>
-          <h1>Bugün ne kritik?</h1>
+          <p className="eyebrow">Erşen · {PERIOD.name}</p>
+          <h1>Bu ay · {flow.month}</h1>
           <p className="lede">
-            %80 baraj, geciken teslimler ve yaklaşan milestone’lar — Excel’e dönmeden.
+            Ay şeridi, müdahale kuyruğu ve ısı haritası — Excel sekmeleri değil, günlük iş.
           </p>
         </div>
         <div className="stat-pills">
@@ -56,95 +90,102 @@ export function Dashboard() {
           </div>
           <div className="stat">
             <span className="stat-label">Baraj altı</span>
-            <strong className={under.length ? "danger" : "ok"}>{under.length}</strong>
-            <span className="stat-sub">fellow</span>
+            <strong className={under ? "danger" : "ok"}>{under}</strong>
           </div>
           <div className="stat">
-            <span className="stat-label">Geciken</span>
-            <strong className={overdue.length ? "warn" : "ok"}>{overdue.length}</strong>
-            <span className="stat-sub">görev</span>
+            <span className="stat-label">Müdahale</span>
+            <strong className={interventions.length ? "warn" : "ok"}>
+              {interventions.length}
+            </strong>
           </div>
         </div>
       </header>
 
-      <div className="grid-2">
-        <section className="panel">
-          <div className="panel-head">
-            <h2>%80 altı</h2>
-            <Link to="/puan">Puan tahtası →</Link>
-          </div>
-          {under.length === 0 ? (
-            <p className="muted">Herkes barajın üzerinde.</p>
-          ) : (
-            <ul className="list">
-              {under.map((u) => (
-                <li key={u.name}>
-                  <Link to={`/fellows/${encodeURIComponent(u.name)}`}>
-                    <span>{u.name}</span>
-                    <span className="badge danger">{pctLabel(u.pct)} · {u.total}p</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+      <div className="month-strip" role="tablist" aria-label="Ay seç">
+        {MONTHLY_FLOW.map((m) => (
+          <button
+            key={m.monthKey}
+            type="button"
+            role="tab"
+            aria-selected={month === m.monthKey}
+            className={`month-pill ${month === m.monthKey ? "active" : ""}`}
+            onClick={() => setMonth(m.monthKey)}
+          >
+            {m.month.slice(0, 3)}
+          </button>
+        ))}
+      </div>
 
-        <section className="panel">
-          <div className="panel-head">
-            <h2>Geciken görevler</h2>
-            <Link to="/gorevler">Tümü →</Link>
-          </div>
-          {overdue.length === 0 ? (
-            <p className="muted">Geciken yok.</p>
-          ) : (
-            <ul className="list">
-              {overdue.slice(0, 8).map((t) => (
-                <li key={t.id}>
-                  <div>
-                    <strong>{t.title}</strong>
-                    <span className="muted block">{t.due} · {t.kind}</span>
-                  </div>
-                  <span className="badge warn">gecikti</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="panel">
-          <div className="panel-head">
-            <h2>Yaklaşan tarihler</h2>
-            <Link to="/takvim">Takvim →</Link>
-          </div>
-          <ul className="list">
+      <section className="panel mb">
+        <div className="panel-head">
+          <h2>{flow.month} odakları</h2>
+          <Link to="/plan">Yıllık plan →</Link>
+        </div>
+        <div className="tag-row">
+          {flow.items.map((item) => (
+            <span key={item} className="tag">
+              {item}
+            </span>
+          ))}
+        </div>
+        {monthMods.length > 0 && (
+          <p className="muted tiny mt">
+            Modüller:{" "}
+            {monthMods
+              .map((c) => SCORE_CATEGORIES.find((x) => x.code === c)?.label ?? c)
+              .join(" · ")}
+          </p>
+        )}
+        {upcoming.length > 0 && (
+          <ul className="list compact mt">
             {upcoming.map((d) => (
               <li key={d.id}>
-                <div>
+                <span>
                   <strong>{d.title}</strong>
-                  <span className="muted block">{d.date}</span>
-                </div>
+                  <i className="muted"> · {d.date}</i>
+                </span>
                 <span className="badge">{d.kind}</span>
               </li>
             ))}
           </ul>
-        </section>
+        )}
+      </section>
 
+      <div className="grid-2">
         <section className="panel">
           <div className="panel-head">
-            <h2>Teslim eksiği (plan)</h2>
-            <Link to="/plan">Yıllık plan →</Link>
+            <h2>Müdahale kuyruğu</h2>
+            <Link to="/mail">Mail zinciri →</Link>
           </div>
-          {hotPlan.length === 0 ? (
-            <p className="muted">Geçmiş kalemlerde eksik yok.</p>
+          {interventions.length === 0 ? (
+            <p className="muted">Şu an kritik müdahale yok.</p>
           ) : (
-            <ul className="list">
-              {hotPlan.map((p) => (
-                <li key={p.id}>
+            <ul className="list intervene">
+              {interventions.slice(0, 12).map((i) => (
+                <li key={i.id}>
                   <div>
-                    <strong>{p.title}</strong>
-                    <span className="muted block">{p.due}</span>
+                    <Link to={`/fellows/${encodeURIComponent(i.fellow)}`}>
+                      <strong>{i.fellow}</strong>
+                    </Link>
+                    <span className="muted block tiny">
+                      {i.reason} · {i.detail}
+                      {i.dose > 0 ? ` · doz #${i.dose}` : ""}
+                    </span>
                   </div>
-                  <span className="badge danger">{p.missing} eksik</span>
+                  <div className="intervene-actions">
+                    <span className={`badge ${i.kind === "baraj" || i.kind === "sorun" ? "danger" : "warn"}`}>
+                      {i.kind}
+                    </span>
+                    <Link
+                      className="btn ghost sm"
+                      to={`/mail?fellow=${encodeURIComponent(i.fellow)}&chain=${i.mailChainId}${
+                        i.planId ? `&plan=${i.planId}` : ""
+                      }&dose=${Math.min(3, (i.dose || 0) + 1)}`}
+                      onClick={() => bumpWarn(i.fellow)}
+                    >
+                      Yaz →
+                    </Link>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -153,35 +194,77 @@ export function Dashboard() {
 
         <section className="panel">
           <div className="panel-head">
-            <h2>Fellow özeti</h2>
-            <Link to="/rapor">Rapor →</Link>
+            <h2>Erşen hatırlatmaları</h2>
+            <Link to="/gorevler">Görevler →</Link>
           </div>
-          <p className="muted">{fellows.length} fellow · puan + teslim oranı</p>
-          <div className="mini-bars">
-            {lowCompletion.map((f) => {
-              const tot = fellowTotal(scores[f.name], bonuses, f.name);
-              const r = barrierRatio(tot);
-              return (
-                <div key={f.name} className="mini-bar-row">
-                  <span>{f.name.split(" ")[0]}</span>
-                  <div className="bar-track">
-                    <div
-                      className={`bar-fill ${underBarrier(tot) ? "is-low" : ""}`}
-                      style={{ width: `${Math.min(100, f.ratio * 100)}%` }}
-                    />
-                  </div>
-                  <span className="mono">
-                    {Math.round(f.ratio * 100)}% · {pctLabel(r)}
-                  </span>
+          <ul className="list compact">
+            {opsTasks.map((t) => (
+              <li key={t.id}>
+                <div>
+                  <strong>{t.title}</strong>
+                  <span className="muted block tiny">{t.due}</span>
                 </div>
-              );
-            })}
-          </div>
-          <Link className="btn ghost mt" to="/mail">
-            Mail kuyruğu →
-          </Link>
+                <span className={`badge ${t.status === "gecikti" ? "danger" : "warn"}`}>
+                  {t.status}
+                </span>
+              </li>
+            ))}
+          </ul>
         </section>
       </div>
+
+      <section className="panel mt-block">
+        <div className="panel-head">
+          <h2>Isı haritası · 21 × kritik modül</h2>
+          <Link to="/fellows">Fellow’lar →</Link>
+        </div>
+        <div className="heat-wrap">
+          <table className="table heat dense">
+            <thead>
+              <tr>
+                <th>Fellow</th>
+                {HEATMAP_MODULES.map((code) => (
+                  <th key={code} title={SCORE_CATEGORIES.find((c) => c.code === code)?.label}>
+                    {(SCORE_CATEGORIES.find((c) => c.code === code)?.label ?? code).slice(0, 6)}
+                  </th>
+                ))}
+                <th>%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {FELLOWS_10.map((name) => {
+                const tot = fellowTotal(scores[name], bonuses, name);
+                const r = barrierRatio(tot);
+                return (
+                  <tr key={name}>
+                    <td>
+                      <Link className="name-link" to={`/fellows/${encodeURIComponent(name)}`}>
+                        {name.split(" ")[0]}
+                      </Link>
+                    </td>
+                    {HEATMAP_MODULES.map((code) => {
+                      const cell = heatmapCell(name, code, stages, scores[name], activities);
+                      return (
+                        <td key={code} className="center">
+                          <span className={`heat-dot heat-${cell}`} title={cell} />
+                        </td>
+                      );
+                    })}
+                    <td>
+                      <span className={`badge ${underBarrier(tot) ? "danger" : "ok"}`}>
+                        {pctLabel(r)}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="muted tiny mt">
+          Yeşil tamam · sarı yolda · kırmızı sorun · gri bekliyor. Puan aşamalardan türetilir.
+        </p>
+      </section>
     </div>
   );
 }

@@ -5,21 +5,26 @@ import { Dashboard } from "./pages/Dashboard";
 import { FellowDetail } from "./pages/FellowDetail";
 import { Fellows } from "./pages/Fellows";
 import { MailPage } from "./pages/Mail";
+import { MentorsPage } from "./pages/Mentors";
 import { Rapport } from "./pages/Rapport";
 import { Scores } from "./pages/Scores";
 import { Tasks } from "./pages/Tasks";
 import { YearPlan } from "./pages/YearPlan";
 import { useStore } from "./state";
 
-const NAV = [
-  { to: "/", label: "Panel", end: true },
+const NAV_MAIN = [
+  { to: "/", label: "Bu ay", end: true },
+  { to: "/fellows", label: "Fellow’lar" },
+  { to: "/mentorler", label: "Mentörler" },
+  { to: "/puan", label: "Puan" },
+  { to: "/mail", label: "Mail zinciri" },
+];
+
+const NAV_MORE = [
   { to: "/plan", label: "Yıllık plan" },
   { to: "/rapor", label: "Rapor" },
-  { to: "/fellows", label: "Fellow’lar" },
   { to: "/gorevler", label: "Görevler" },
-  { to: "/puan", label: "Puan" },
   { to: "/takvim", label: "Takvim" },
-  { to: "/mail", label: "Mail" },
 ];
 
 export default function App() {
@@ -31,13 +36,30 @@ export default function App() {
         <p className="brand">LEAD21</p>
         <p className="brand-sub">Ops · {PERIOD.name}</p>
         <p className="side-note">
-          Fellow durum · plan · puan · mail
+          Bu ay · müdahale · mentör
           <br />
           Ideal {TOTAL_IDEAL} · baraj %80
         </p>
         <nav className="nav">
-          {NAV.map((n) => (
-            <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => (isActive ? "active" : "")}>
+          {NAV_MAIN.map((n) => (
+            <NavLink
+              key={n.to}
+              to={n.to}
+              end={n.end}
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              {n.label}
+            </NavLink>
+          ))}
+        </nav>
+        <p className="nav-section">Daha fazla</p>
+        <nav className="nav nav-more">
+          {NAV_MORE.map((n) => (
+            <NavLink
+              key={n.to}
+              to={n.to}
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
               {n.label}
             </NavLink>
           ))}
@@ -45,7 +67,7 @@ export default function App() {
         <button type="button" className="btn ghost reset" onClick={resetDemo}>
           Demo veriyi sıfırla
         </button>
-        <p className="side-foot">Örnek veri · oyun/jüri yok</p>
+        <p className="side-foot">Aşama → puan · oyun yok</p>
       </aside>
       <main className="main">
         <Routes>
@@ -54,6 +76,7 @@ export default function App() {
           <Route path="/rapor" element={<Rapport />} />
           <Route path="/fellows" element={<Fellows />} />
           <Route path="/fellows/:name" element={<FellowDetail />} />
+          <Route path="/mentorler" element={<MentorsPage />} />
           <Route path="/gorevler" element={<Tasks />} />
           <Route path="/puan" element={<Scores />} />
           <Route path="/takvim" element={<CalendarPage />} />

@@ -1,12 +1,20 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { FELLOWS_10, MAIL_TEMPLATES, PLAN_ITEMS } from "../data/seed";
+import { FELLOWS_10, MAIL_CHAINS, MAIL_TEMPLATES, PLAN_ITEMS } from "../data/seed";
 import { fillTemplate, fellowsMissing } from "../lib/plan";
 import { useStore } from "../state";
 
 export function MailPage() {
-  const { fellows, activities, mailLog, addMailLog } = useStore();
+  const { fellows, activities, mailLog, addMailLog, bumpWarn } = useStore();
   const [params] = useSearchParams();
+  const [mode, setMode] = useState<"zincir" | "tek">("zincir");
+  const [chainId, setChainId] = useState(
+    () => params.get("chain") ?? MAIL_CHAINS[0].id,
+  );
+  const [stepLevel, setStepLevel] = useState(() => {
+    const d = Number(params.get("dose") ?? "1");
+    return Math.min(3, Math.max(1, Number.isFinite(d) ? d : 1));
+  });
   const [templateId, setTemplateId] = useState<string>(MAIL_TEMPLATES[0].id);
   const [planId, setPlanId] = useState(params.get("plan") ?? PLAN_ITEMS[0]?.id ?? "");
   const [selected, setSelected] = useState<string[]>(() => {
@@ -18,6 +26,8 @@ export function MailPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
 
+  const chain = MAIL_CHAINS.find((c) => c.id === chainId) ?? MAIL_CHAINS[0];
+  const step = chain.steps.find((s) => s.level === stepLevel) ?? chain.steps[0];
   const tpl = MAIL_TEMPLATES.find((t) => t.id === templateId) ?? MAIL_TEMPLATES[0];
   const plan = PLAN_ITEMS.find((p) => p.id === planId);
 
@@ -26,23 +36,26 @@ export function MailPage() {
     [activities, planId],
   );
 
-  function applyTemplate(toFellow?: string) {
+  function applyContent(toFellow?: string) {
     const isim = toFellow ?? selected[0] ?? "Fellow";
-    setSubject(
-      fillTemplate(tpl.subject, {
-        isim,
-        kalem: plan?.title,
-        deadline: plan?.due,
-      }),
-    );
-    setBody(
-      fillTemplate(tpl.body, {
-        isim,
-        kalem: plan?.title,
-        deadline: plan?.due,
-      }),
-    );
+    const vars = {
+      isim,
+      kalem: plan?.title,
+      deadline: plan?.due,
+    };
+    if (mode === "zincir") {
+      setSubject(fillTemplate(step.subject, vars));
+      setBody(fillTemplate(step.body, vars));
+    } else {
+      setSubject(fillTemplate(tpl.subject, vars));
+      setBody(fillTemplate(tpl.body, vars));
+    }
   }
+
+  useEffect(() => {
+    applyContent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, chainId, stepLevel, templateId, planId]);
 
   function toggle(name: string) {
     setSelected((prev) => (prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name]));
@@ -57,19 +70,24 @@ export function MailPage() {
     setMsg("");
     const payloads = selected.map((name) => {
       const meta = fellows.find((f) => f.name === name);
+      const vars = {
+        isim: name,
+        kalem: plan?.title,
+        deadline: plan?.due,
+      };
+      const sub =
+        mode === "zincir"
+          ? fillTemplate(step.subject, vars)
+          : fillTemplate(subject || tpl.subject, vars);
+      const bod =
+        mode === "zincir"
+          ? fillTemplate(step.body, vars)
+          : fillTemplate(body || tpl.body, vars);
       return {
         to: meta?.email ?? `${name}@ornek.lead21`,
         name,
-        subject: fillTemplate(subject || tpl.subject, {
-          isim: name,
-          kalem: plan?.title,
-          deadline: plan?.due,
-        }),
-        body: fillTemplate(body || tpl.body, {
-          isim: name,
-          kalem: plan?.title,
-          deadline: plan?.due,
-        }),
+        subject: sub,
+        body: bod,
       };
     });
 
@@ -84,23 +102,27 @@ export function MailPage() {
         mode?: string;
         detail?: string;
       };
-      const mode = data.mode === "gonderildi" ? "gonderildi" : data.ok === false ? "hata" : "ornek";
+      const sendMode =
+        data.mode === "gonderildi" ? "gonderildi" : data.ok === false ? "hata" : "ornek";
       for (const p of payloads) {
         addMailLog({
           at: new Date().toISOString(),
           to: [p.to],
           subject: p.subject,
           body: p.body,
-          mode,
-          detail: data.detail,
+          mode: sendMode,
+          detail:
+            (mode === "zincir" ? `${chain.label} · seviye ${step.level}` : undefined) ??
+            data.detail,
         });
+        bumpWarn(p.name);
       }
       setMsg(
-        mode === "gonderildi"
+        sendMode === "gonderildi"
           ? `${payloads.length} mail gönderildi.`
-          : mode === "hata"
+          : sendMode === "hata"
             ? `Gönderim hatası: ${data.detail ?? res.status}`
-            : `${payloads.length} mail örnek moda kaydedildi (Resend secret yok veya API yok).`,
+            : `${payloads.length} mail örnek moda · ${mode === "zincir" ? `Mario L${step.level}` : "şablon"} (Resend yok).`,
       );
     } catch (e) {
       for (const p of payloads) {
@@ -112,8 +134,9 @@ export function MailPage() {
           mode: "ornek",
           detail: String(e),
         });
+        bumpWarn(p.name);
       }
-      setMsg("API yok — örnek log’a yazıldı. Resend bağlanınca gerçek gönderim açılır.");
+      setMsg("API yok — örnek log. Resend bağlanınca gerçek gönderim açılır.");
     } finally {
       setBusy(false);
     }
@@ -123,11 +146,27 @@ export function MailPage() {
     <div className="page">
       <header className="page-head">
         <div>
-          <p className="eyebrow">Mail</p>
-          <h1>Hatırlatma & iletişim</h1>
+          <p className="eyebrow">İletişim</p>
+          <h1>Super Mario zinciri</h1>
           <p className="lede">
-            Şablon seç, eksik fellow’ları doldur, gönder. Resend bağlı değilse örnek log tutulur.
+            Nazik → net → disiplin. Doz fellow’da birikir; Resend yoksa örnek log.
           </p>
+        </div>
+        <div className="toolbar">
+          <button
+            type="button"
+            className={`chip ${mode === "zincir" ? "on" : ""}`}
+            onClick={() => setMode("zincir")}
+          >
+            Zincir
+          </button>
+          <button
+            type="button"
+            className={`chip ${mode === "tek" ? "on" : ""}`}
+            onClick={() => setMode("tek")}
+          >
+            Tek şablon
+          </button>
         </div>
       </header>
 
@@ -151,33 +190,68 @@ export function MailPage() {
             </button>
           </div>
           <div className="recipient-grid">
-            {FELLOWS_10.map((f) => (
-              <label key={f} className="check">
-                <input
-                  type="checkbox"
-                  checked={selected.includes(f)}
-                  onChange={() => toggle(f)}
-                />
-                {f}
-              </label>
-            ))}
+            {FELLOWS_10.map((f) => {
+              const meta = fellows.find((x) => x.name === f);
+              return (
+                <label key={f} className="check">
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(f)}
+                    onChange={() => toggle(f)}
+                  />
+                  {f}
+                  {(meta?.warnCount ?? 0) > 0 && (
+                    <span className="muted tiny"> · doz {meta?.warnCount}</span>
+                  )}
+                </label>
+              );
+            })}
           </div>
         </section>
 
         <section className="panel">
-          <h2>Şablon & kalem</h2>
+          <h2>{mode === "zincir" ? "Zincir adımı" : "Şablon"}</h2>
           <div className="form-col">
-            <select
-              className="select"
-              value={templateId}
-              onChange={(e) => setTemplateId(e.target.value)}
-            >
-              {MAIL_TEMPLATES.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
+            {mode === "zincir" ? (
+              <>
+                <select
+                  className="select"
+                  value={chainId}
+                  onChange={(e) => setChainId(e.target.value)}
+                >
+                  {MAIL_CHAINS.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="mario-steps">
+                  {chain.steps.map((s) => (
+                    <button
+                      key={s.level}
+                      type="button"
+                      className={`mario-step ${stepLevel === s.level ? "active" : ""}`}
+                      onClick={() => setStepLevel(s.level)}
+                    >
+                      <span className="mario-lvl">L{s.level}</span>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <select
+                className="select"
+                value={templateId}
+                onChange={(e) => setTemplateId(e.target.value)}
+              >
+                {MAIL_TEMPLATES.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            )}
             <select className="select" value={planId} onChange={(e) => setPlanId(e.target.value)}>
               {PLAN_ITEMS.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -185,8 +259,8 @@ export function MailPage() {
                 </option>
               ))}
             </select>
-            <button type="button" className="btn ghost" onClick={() => applyTemplate()}>
-              Şablonu doldur
+            <button type="button" className="btn ghost" onClick={() => applyContent()}>
+              Metni yenile
             </button>
             <input
               className="input"
@@ -202,7 +276,7 @@ export function MailPage() {
               onChange={(e) => setBody(e.target.value)}
             />
             <button type="button" className="btn" disabled={busy} onClick={send}>
-              {busy ? "Gönderiliyor…" : "Gönder / kaydet"}
+              {busy ? "Gönderiliyor…" : "Gönder / kaydet (+doz)"}
             </button>
             {msg && <p className="muted">{msg}</p>}
           </div>
@@ -224,7 +298,9 @@ export function MailPage() {
                     {m.detail ? ` · ${m.detail}` : ""}
                   </span>
                 </div>
-                <span className={`badge ${m.mode === "gonderildi" ? "ok" : m.mode === "hata" ? "danger" : "warn"}`}>
+                <span
+                  className={`badge ${m.mode === "gonderildi" ? "ok" : m.mode === "hata" ? "danger" : "warn"}`}
+                >
                   {m.mode}
                 </span>
               </li>

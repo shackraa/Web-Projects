@@ -959,6 +959,143 @@ h3.subh,
   margin-top: 0.75rem;
 }
 
+.mt-block {
+  margin-top: 1.25rem;
+}
+
 .block {
   display: block;
+}
+
+.month-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.month-pill {
+  border: 1px solid var(--line);
+  background: rgba(22, 18, 15, 0.7);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.month-pill.active {
+  color: #fff;
+  border-color: rgba(198, 40, 40, 0.55);
+  background: rgba(198, 40, 40, 0.22);
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.tag {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.intervene-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.list.intervene li {
+  align-items: flex-start;
+}
+
+.heat-wrap {
+  overflow: auto;
+  max-height: 28rem;
+}
+
+.table.heat th {
+  font-size: 0.62rem;
+}
+
+.heat-dot {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+.heat-ok {
+  background: var(--ok);
+}
+
+.heat-yolda {
+  background: var(--warn);
+}
+
+.heat-sorun {
+  background: var(--danger);
+}
+
+.heat-bekliyor {
+  background: #4a433c;
+}
+
+.nav-section {
+  margin: 0.85rem 0 0.15rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.nav-more a {
+  opacity: 0.85;
+  font-size: 0.88rem !important;
+}
+
+.mario-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.mario-step {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  text-align: left;
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: rgba(22, 18, 15, 0.75);
+  color: inherit;
+  cursor: pointer;
+}
+
+.mario-step.active {
+  border-color: rgba(212, 160, 23, 0.5);
+  background: rgba(212, 160, 23, 0.1);
+}
+
+.mario-lvl {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(198, 40, 40, 0.55);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+.chip.on {
+  border-color: rgba(198, 40, 40, 0.55);
+  background: rgba(198, 40, 40, 0.2);
+  color: #fff;
 }
