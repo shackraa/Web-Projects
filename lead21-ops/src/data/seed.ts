@@ -437,6 +437,149 @@ export function seedActivities(): Activity[] {
   return out;
 }
 
+export type StageStatus = "yapildi" | "devam" | "bekliyor" | "sorun";
+
+export type StageProgress = {
+  id: string;
+  fellow: string;
+  moduleCode: string;
+  stageCode: string;
+  status: StageStatus;
+  at?: string;
+  note?: string;
+  issue?: string;
+};
+
+/** Modüllerde items yoksa kullanılan varsayılan aşamalar */
+export const MODULE_FALLBACK_STAGES: Record<string, { code: string; label: string }[]> = {
+  sm_profil: [{ code: "bio", label: "SM / LinkedIn #LEAD21" }],
+  kurucu_acilis: [{ code: "leadup", label: "LEAD UP açılış" }],
+  kocluk: [
+    { code: "s1", label: "Seans 1" },
+    { code: "s2", label: "Seans 2" },
+    { code: "s3", label: "Seans 3" },
+    { code: "s4", label: "Seans 4" },
+  ],
+  finansal: [
+    { code: "prep", label: "Ön hazırlık" },
+    { code: "seans", label: "Seanslar" },
+    { code: "plan", label: "Kişisel finans planı" },
+  ],
+  kariyer: [
+    { code: "cv", label: "CV / HBS" },
+    { code: "linkedin", label: "LinkedIn" },
+    { code: "ik", label: "İK birebir" },
+    { code: "konusmaci", label: "Konuşmacı seansları" },
+  ],
+  summit1: [
+    { code: "katilim", label: "Katılım" },
+    { code: "circles", label: "Circles" },
+    { code: "sm", label: "Sosyal medya" },
+    { code: "form", label: "Değerlendirme formu" },
+  ],
+  summit2: [
+    { code: "katilim", label: "Katılım" },
+    { code: "circles", label: "Circles" },
+    { code: "sm", label: "Sosyal medya" },
+    { code: "form", label: "Değerlendirme formu" },
+  ],
+  summit3: [
+    { code: "katilim", label: "Katılım" },
+    { code: "form", label: "Değerlendirme formu" },
+  ],
+  gelistirme: [{ code: "gorusme", label: "Birebir geliştirme" }],
+  kurucu_kapanis: [{ code: "yemek", label: "Kapanış yemeği" }],
+  ekip_ici: [
+    { code: "mar", label: "Mart" },
+    { code: "nis", label: "Nisan" },
+    { code: "may", label: "Mayıs" },
+    { code: "haz", label: "Haziran" },
+    { code: "tem", label: "Temmuz" },
+    { code: "agu", label: "Ağustos" },
+    { code: "eyl", label: "Eylül" },
+    { code: "eki", label: "Ekim" },
+    { code: "kas", label: "Kasım" },
+  ],
+  lead_talks: [
+    { code: "sub", label: "Şubat oturumu" },
+    { code: "mar", label: "Mart oturumu" },
+    { code: "nis", label: "Nisan oturumu" },
+    { code: "may", label: "Mayıs oturumu" },
+    { code: "haz", label: "Haziran oturumu" },
+    { code: "eyl", label: "Eylül oturumu" },
+    { code: "eki", label: "Ekim oturumu" },
+  ],
+};
+
+export function moduleStages(moduleCode: string): { code: string; label: string; ideal?: number }[] {
+  const cat = SCORE_CATEGORIES.find((c) => c.code === moduleCode);
+  if (cat?.items?.length) return cat.items.map((i) => ({ code: i.code, label: i.label, ideal: i.ideal }));
+  return (MODULE_FALLBACK_STAGES[moduleCode] ?? [{ code: "tamam", label: "Tamamlandı" }]).map((s) => ({
+    ...s,
+  }));
+}
+
+/** Demo aşama ilerlemeleri + sorunlar */
+export function seedStages(): StageProgress[] {
+  const out: StageProgress[] = [];
+  let n = 0;
+  const asOf = "2026-11-18";
+  for (const fellow of FELLOWS_10) {
+    const fi = FELLOWS_10.indexOf(fellow);
+    const troubled = fi === 2 || fi === 6 || fi === 14;
+    for (const cat of SCORE_CATEGORIES) {
+      const stages = moduleStages(cat.code);
+      // Geçmiş odaklı: yıl sonu modülleri (summit3, kapanış) bekliyor
+      const lateModules = ["summit3", "kurucu_kapanis", "gelistirme"];
+      stages.forEach((st, si) => {
+        n += 1;
+        let status: StageStatus = "yapildi";
+        let issue: string | undefined;
+        let note: string | undefined;
+        let at: string | undefined = `2026-${String(Math.min(10, 1 + si)).padStart(2, "0")}-${String(10 + (si % 18)).padStart(2, "0")}`;
+
+        if (lateModules.includes(cat.code)) {
+          status = "bekliyor";
+          at = undefined;
+        } else if (troubled && (cat.code === "slj" || cat.code === "sektorel" || cat.code === "mentorluk")) {
+          if (si >= stages.length - 2) {
+            status = "sorun";
+            issue =
+              cat.code === "slj"
+                ? "Sprint/final gecikmesi — WA uyarısı yapıldı"
+                : cat.code === "sektorel"
+                  ? "Final rapor deadline riski (Kasım sonu)"
+                  : "2. mentör görüşmesi ayarlanmadı";
+            at = asOf;
+          } else if (si === stages.length - 3) {
+            status = "devam";
+            note = "Devam ediyor";
+          }
+        } else if ((fi + si) % 13 === 0 && cat.code === "lead_talks") {
+          status = "bekliyor";
+          at = undefined;
+          note = "Katılım kaydı yok";
+        } else if ((fi + si) % 17 === 0 && cat.code === "ekip_ici" && si >= 6) {
+          status = "devam";
+          note = "Foto/not bekleniyor";
+        }
+
+        out.push({
+          id: `s-${n}`,
+          fellow,
+          moduleCode: cat.code,
+          stageCode: st.code,
+          status,
+          at,
+          note,
+          issue,
+        });
+      });
+    }
+  }
+  return out;
+}
+
 export const MAIL_TEMPLATES = [
   {
     id: "eksik",
