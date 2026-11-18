@@ -72,7 +72,13 @@ export default function App() {
     <div className="app-shell">
       <aside className="side">
         <NavLink to="/" className="brand-block" end>
-          <img className="brand-mark" src="/lead21-mark.svg" alt="LEAD21" width={148} height={38} />
+          <img
+            className="brand-mark"
+            src={`${import.meta.env.BASE_URL}lead21-mark.svg`}
+            alt="LEAD21"
+            width={148}
+            height={38}
+          />
           <span className="brand-sub">Ops · {PERIOD.name}</span>
         </NavLink>
         <p className="side-note">
