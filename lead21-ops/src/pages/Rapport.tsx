@@ -104,7 +104,7 @@ export function Rapport() {
             {rows.map((r) => (
               <tr key={r.name} className={r.missing.length > 2 || r.low ? "row-warn" : undefined}>
                 <td>
-                  <button type="button" className="linkish" onClick={() => setFellow(r.name)}>
+                  <button type="button" className="linkish name-linkish" onClick={() => setFellow(r.name)}>
                     {r.name}
                   </button>
                 </td>

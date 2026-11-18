@@ -135,7 +135,9 @@ function PlanDetail({ planItemId }: { planItemId: string }) {
           return (
             <li key={f}>
               <div>
-                <Link to={`/fellows/${encodeURIComponent(f)}`}>{f}</Link>
+                <Link className="name-link" to={`/fellows/${encodeURIComponent(f)}`}>
+                  {f}
+                </Link>
                 <span className="muted block tiny">
                   {a?.at}
                   {a?.evidence ? ` · ${a.evidence}` : ""}
@@ -154,8 +156,10 @@ function PlanDetail({ planItemId }: { planItemId: string }) {
         <ul className="list compact">
           {missing.map((f) => (
             <li key={f}>
-              <Link to={`/fellows/${encodeURIComponent(f)}`}>{f}</Link>
-              <Link className="btn ghost sm" to={`/mail?fellow=${encodeURIComponent(f)}&plan=${item.id}`}>
+              <Link className="name-link" to={`/fellows/${encodeURIComponent(f)}`}>
+                {f}
+              </Link>
+              <Link className="btn sm" to={`/mail?fellow=${encodeURIComponent(f)}&plan=${item.id}`}>
                 Mail
               </Link>
             </li>

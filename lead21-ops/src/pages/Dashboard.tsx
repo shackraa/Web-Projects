@@ -164,24 +164,25 @@ export function Dashboard() {
           {interventions.length === 0 ? (
             <p className="muted">Şu an kritik müdahale yok.</p>
           ) : (
-            <ul className="list intervene">
+            <ul className="pick-list">
               {interventions.slice(0, 12).map((i) => (
-                <li key={i.id}>
-                  <div>
-                    <Link to={`/fellows/${encodeURIComponent(i.fellow)}`}>
-                      <strong>{i.fellow}</strong>
-                    </Link>
+                <li key={i.id} className="pick-row">
+                  <Link
+                    className="pick-main"
+                    to={`/fellows/${encodeURIComponent(i.fellow)}`}
+                  >
+                    <span className="pick-name">{i.fellow}</span>
                     <span className="muted block tiny">
                       {i.reason} · {i.detail}
                       {i.dose > 0 ? ` · doz #${i.dose}` : ""}
                     </span>
-                  </div>
+                  </Link>
                   <div className="intervene-actions">
                     <span className={`badge ${i.kind === "baraj" || i.kind === "sorun" ? "danger" : "warn"}`}>
                       {i.kind}
                     </span>
                     <Link
-                      className="btn ghost sm"
+                      className="btn sm"
                       to={`/mail?fellow=${encodeURIComponent(i.fellow)}&chain=${i.mailChainId}${
                         i.planId ? `&plan=${i.planId}` : ""
                       }&dose=${Math.min(3, (i.dose || 0) + 1)}`}
@@ -244,6 +245,9 @@ export function Dashboard() {
                     <td>
                       <Link className="name-link" to={`/fellows/${encodeURIComponent(name)}`}>
                         {name.split(" ")[0]}
+                        <span className="name-hint" aria-hidden>
+                          →
+                        </span>
                       </Link>
                     </td>
                     {HEATMAP_MODULES.map((code) => {
