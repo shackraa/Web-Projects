@@ -648,17 +648,33 @@ export function seedStages(): StageProgress[] {
         if (lateModules.includes(cat.code)) {
           status = "bekliyor";
           at = undefined;
-        } else if (troubled && (cat.code === "slj" || cat.code === "sektorel" || cat.code === "mentorluk")) {
-          if (si >= stages.length - 2) {
+        } else if (
+          troubled &&
+          (cat.code === "slj" ||
+            cat.code === "sektorel" ||
+            cat.code === "mentorluk" ||
+            cat.code === "ekip_ici" ||
+            cat.code === "summit2" ||
+            cat.code === "lead_talks")
+        ) {
+          // Baraj altı demo: kritik modüllerde yarısından sonrası sorun/eksik
+          const cut = Math.max(1, Math.floor(stages.length * 0.45));
+          if (si >= cut) {
             status = "sorun";
             issue =
               cat.code === "slj"
                 ? "Sprint/final gecikmesi — WA uyarısı yapıldı"
                 : cat.code === "sektorel"
                   ? "Final rapor deadline riski (Kasım sonu)"
-                  : "2. mentör görüşmesi ayarlanmadı";
+                  : cat.code === "mentorluk"
+                    ? "2. mentör görüşmesi ayarlanmadı"
+                    : cat.code === "ekip_ici"
+                      ? "Foto/not yok — kamera kuralı"
+                      : cat.code === "summit2"
+                        ? "Summit 2 katılım/form eksiği"
+                        : "LEAD Talks katılım kaydı yok";
             at = asOf;
-          } else if (si === stages.length - 3) {
+          } else if (si === cut - 1) {
             status = "devam";
             note = "Devam ediyor";
           }
