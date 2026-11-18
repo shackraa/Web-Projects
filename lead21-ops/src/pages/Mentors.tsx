@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Breadcrumbs } from "../components/Breadcrumbs";
+import { PageTitle } from "../components/PageTitle";
 import { FELLOWS_10, type MentorKind, type MentorStatus } from "../data/seed";
 import { useStore } from "../state";
 
@@ -36,6 +38,8 @@ export function MentorsPage() {
 
   return (
     <div className="page">
+      <PageTitle title="Mentörler" />
+      <Breadcrumbs items={[{ label: "Bu ay", to: "/" }, { label: "Mentörler" }]} />
       <header className="page-head">
         <div>
           <p className="eyebrow">Mentör pipeline</p>

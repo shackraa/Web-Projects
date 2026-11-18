@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Breadcrumbs } from "../components/Breadcrumbs";
+import { PageTitle } from "../components/PageTitle";
 import { SCORE_CATEGORIES } from "../data/seed";
 import { fellowIssues, moduleSnapshot } from "../lib/modules";
 import { barrierRatio, fellowTotal, pctLabel, underBarrier } from "../lib/scoring";
@@ -43,6 +45,8 @@ export function Fellows() {
 
   return (
     <div className="page">
+      <PageTitle title="Fellow’lar" />
+      <Breadcrumbs items={[{ label: "Bu ay", to: "/" }, { label: "Fellow’lar" }]} />
       <header className="page-head">
         <div>
           <p className="eyebrow">CRM</p>

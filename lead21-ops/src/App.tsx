@@ -2,10 +2,13 @@ import { NavLink, Route, Routes } from "react-router-dom";
 import { PERIOD, TOTAL_IDEAL } from "./data/seed";
 import { CalendarPage } from "./pages/Calendar";
 import { Dashboard } from "./pages/Dashboard";
+import { FaqPage } from "./pages/Faq";
 import { FellowDetail } from "./pages/FellowDetail";
 import { Fellows } from "./pages/Fellows";
 import { MailPage } from "./pages/Mail";
 import { MentorsPage } from "./pages/Mentors";
+import { NotFound } from "./pages/NotFound";
+import { PrivacyPage } from "./pages/Privacy";
 import { Rapport } from "./pages/Rapport";
 import { Scores } from "./pages/Scores";
 import { Tasks } from "./pages/Tasks";
@@ -25,6 +28,8 @@ const NAV_MORE = [
   { to: "/rapor", label: "Rapor" },
   { to: "/gorevler", label: "Görevler" },
   { to: "/takvim", label: "Takvim" },
+  { to: "/sss", label: "SSS" },
+  { to: "/gizlilik", label: "Gizlilik" },
 ];
 
 export default function App() {
@@ -67,7 +72,7 @@ export default function App() {
         <button type="button" className="btn ghost reset" onClick={resetDemo}>
           Demo veriyi sıfırla
         </button>
-        <p className="side-foot">Aşama → puan · oyun yok</p>
+        <p className="side-foot">Anthropic Sans · aşama → puan</p>
       </aside>
       <main className="main">
         <Routes>
@@ -81,8 +86,19 @@ export default function App() {
           <Route path="/puan" element={<Scores />} />
           <Route path="/takvim" element={<CalendarPage />} />
           <Route path="/mail" element={<MailPage />} />
+          <Route path="/sss" element={<FaqPage />} />
+          <Route path="/gizlilik" element={<PrivacyPage />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+      <div className="sticky-cta" aria-label="Hızlı aksiyon">
+        <NavLink className="btn" to="/mail">
+          Mail yaz
+        </NavLink>
+        <NavLink className="btn ghost" to="/#mudahale">
+          Müdahale
+        </NavLink>
+      </div>
     </div>
   );
 }

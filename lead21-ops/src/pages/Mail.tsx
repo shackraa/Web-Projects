@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { Breadcrumbs } from "../components/Breadcrumbs";
+import { PageTitle } from "../components/PageTitle";
 import { FELLOWS_10, MAIL_CHAINS, MAIL_TEMPLATES, PLAN_ITEMS } from "../data/seed";
 import { fillTemplate, fellowsMissing } from "../lib/plan";
 import { useStore } from "../state";
@@ -144,6 +146,8 @@ export function MailPage() {
 
   return (
     <div className="page">
+      <PageTitle title="Mail zinciri" />
+      <Breadcrumbs items={[{ label: "Bu ay", to: "/" }, { label: "Mail zinciri" }]} />
       <header className="page-head">
         <div>
           <p className="eyebrow">İletişim</p>

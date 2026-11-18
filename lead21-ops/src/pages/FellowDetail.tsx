@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Breadcrumbs } from "../components/Breadcrumbs";
+import { PageTitle } from "../components/PageTitle";
 import {
   PLAN_ITEMS,
   SCORE_CATEGORIES,
@@ -73,6 +75,14 @@ export function FellowDetail() {
 
   return (
     <div className="page">
+      <PageTitle title={fellowName} />
+      <Breadcrumbs
+        items={[
+          { label: "Bu ay", to: "/" },
+          { label: "Fellow’lar", to: "/fellows" },
+          { label: fellowName },
+        ]}
+      />
       <header className="page-head">
         <div>
           <Link className="back" to="/fellows">

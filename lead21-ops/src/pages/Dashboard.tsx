@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Breadcrumbs } from "../components/Breadcrumbs";
+import { PageTitle } from "../components/PageTitle";
 import {
   FELLOWS_10,
   HEATMAP_MODULES,
@@ -74,6 +76,8 @@ export function Dashboard() {
 
   return (
     <div className="page">
+      <PageTitle title={`Bu ay · ${flow.month}`} />
+      <Breadcrumbs items={[{ label: "Bu ay" }]} />
       <header className="page-head">
         <div>
           <p className="eyebrow">Erşen · {PERIOD.name}</p>
@@ -152,7 +156,7 @@ export function Dashboard() {
       </section>
 
       <div className="grid-2">
-        <section className="panel">
+        <section className="panel" id="mudahale">
           <div className="panel-head">
             <h2>Müdahale kuyruğu</h2>
             <Link to="/mail">Mail zinciri →</Link>

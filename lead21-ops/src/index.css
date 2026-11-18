@@ -11,8 +11,8 @@
   --warn: #d4a017;
   --danger: #e85d4c;
   --radius: 12px;
-  --font: "DM Sans", system-ui, sans-serif;
-  --display: "Syne", "DM Sans", sans-serif;
+  --font: "Anthropic Sans", anthropicSans, "AnthropicSans", system-ui, sans-serif;
+  --display: "Anthropic Serif", anthropicSerif, "AnthropicSans", var(--font);
   color: var(--text);
   background: var(--bg0);
   font-family: var(--font);
@@ -1098,4 +1098,90 @@ h3.subh,
   border-color: rgba(198, 40, 40, 0.55);
   background: rgba(198, 40, 40, 0.2);
   color: #fff;
+}
+
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.crumb a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.crumb-sep {
+  margin: 0 0.35rem;
+  opacity: 0.5;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.faq-item {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(22, 18, 15, 0.75);
+  padding: 0.75rem 1rem;
+}
+
+.faq-item summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item p {
+  margin: 0.55rem 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.prose-panel h2 {
+  font-size: 1rem;
+  margin: 1rem 0 0.35rem;
+}
+
+.prose-panel p {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+}
+
+.sticky-cta {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .sticky-cta {
+    display: flex;
+    position: fixed;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    z-index: 40;
+    gap: 0.5rem;
+    justify-content: stretch;
+  }
+
+  .sticky-cta .btn {
+    flex: 1;
+    text-align: center;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  }
+
+  .main {
+    padding-bottom: 4.5rem;
+  }
 }
