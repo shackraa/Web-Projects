@@ -15,15 +15,12 @@ import { Tasks } from "./pages/Tasks";
 import { YearPlan } from "./pages/YearPlan";
 import { useStore } from "./state";
 
-const NAV_MAIN = [
+const NAV = [
   { to: "/", label: "Bu ay", end: true },
   { to: "/fellows", label: "Fellow’lar" },
   { to: "/mentorler", label: "Mentörler" },
   { to: "/puan", label: "Puan" },
   { to: "/mail", label: "Mail zinciri" },
-];
-
-const NAV_MORE = [
   { to: "/plan", label: "Yıllık plan" },
   { to: "/rapor", label: "Rapor" },
   { to: "/gorevler", label: "Görevler" },
@@ -38,15 +35,17 @@ export default function App() {
   return (
     <div className="app-shell">
       <aside className="side">
-        <p className="brand">LEAD21</p>
-        <p className="brand-sub">Ops · {PERIOD.name}</p>
+        <NavLink to="/" className="brand-block" end>
+          <img className="brand-mark" src="/lead21-mark.svg" alt="LEAD21" width={148} height={38} />
+          <span className="brand-sub">Ops · {PERIOD.name}</span>
+        </NavLink>
         <p className="side-note">
           Bu ay · müdahale · mentör
           <br />
           Ideal {TOTAL_IDEAL} · baraj %80
         </p>
         <nav className="nav">
-          {NAV_MAIN.map((n) => (
+          {NAV.map((n) => (
             <NavLink
               key={n.to}
               to={n.to}
@@ -57,22 +56,10 @@ export default function App() {
             </NavLink>
           ))}
         </nav>
-        <p className="nav-section">Daha fazla</p>
-        <nav className="nav nav-more">
-          {NAV_MORE.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              className={({ isActive }) => (isActive ? "active" : "")}
-            >
-              {n.label}
-            </NavLink>
-          ))}
-        </nav>
         <button type="button" className="btn ghost reset" onClick={resetDemo}>
           Demo veriyi sıfırla
         </button>
-        <p className="side-foot">Aşama kaynağı; puan türetilir</p>
+        <p className="side-foot">Yeni Bir Lider · aşama → puan</p>
       </aside>
       <main className="main">
         <Routes>
