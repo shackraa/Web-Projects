@@ -272,28 +272,25 @@ export const DEFAULT_TASKS: OpsTask[] = [
   },
 ];
 
-/** Deterministik demo puan üretimi (bazı fellow’lar %80 altı) */
+/** Deterministik demo puan — çoğu %80 üstü, 3 fellow baraj altı */
 export function seedScores(): Record<string, Record<string, number>> {
   const out: Record<string, Record<string, number>> = {};
   FELLOWS_10.forEach((name, i) => {
     const row: Record<string, number> = {};
-    // Progress factor: late in year ~0.55–0.95 of ideal so far; vary by index
-    const factor = 0.52 + ((i * 17) % 40) / 100; // 0.52–0.91
+    // Full-year completion mix so baraj anlamlı: ~0.86–0.98
+    const factor = 0.88 + ((i * 7) % 11) / 100;
     for (const cat of SCORE_CATEGORIES) {
-      // Mid-year: summit3 / gelistirme / kurucu_kapanis often 0
-      const late = ["summit3", "gelistirme", "kurucu_kapanis"].includes(cat.code);
-      if (late) {
-        row[cat.code] = 0;
-        continue;
-      }
-      const raw = Math.round(cat.ideal * factor * (0.85 + ((i + cat.ideal) % 15) / 100));
+      const wobble = 0.92 + ((i * 3 + cat.ideal) % 10) / 100;
+      const raw = Math.round(cat.ideal * factor * wobble);
       row[cat.code] = Math.min(cat.ideal, Math.max(0, raw));
     }
-    // Force a few under barrier for demo
+    // 3 fellow baraj altına düşür (demo)
     if (i === 2 || i === 6 || i === 14) {
-      row.slj = Math.round((row.slj ?? 0) * 0.4);
-      row.mentorluk = Math.round((row.mentorluk ?? 0) * 0.45);
-      row.ekip_ici = Math.round((row.ekip_ici ?? 0) * 0.3);
+      row.slj = Math.round((row.slj ?? 0) * 0.35);
+      row.mentorluk = Math.round((row.mentorluk ?? 0) * 0.4);
+      row.ekip_ici = Math.round((row.ekip_ici ?? 0) * 0.25);
+      row.sektorel = Math.round((row.sektorel ?? 0) * 0.3);
+      row.summit2 = Math.round((row.summit2 ?? 0) * 0.2);
     }
     out[name] = row;
   });
