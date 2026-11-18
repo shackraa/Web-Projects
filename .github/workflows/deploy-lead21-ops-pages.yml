@@ -1,11 +1,8 @@
 name: Deploy LEAD21 Ops (public Pages)
 
+# Manual only until GitHub Pages is enabled on the repo
+# (Settings → Pages → Source: GitHub Actions). Auto-push was failing CI with 404.
 on:
-  push:
-    branches: [cursor/lead21-fellow-ops-de59]
-    paths:
-      - "lead21-ops/**"
-      - ".github/workflows/deploy-lead21-ops-pages.yml"
   workflow_dispatch:
 
 permissions:
