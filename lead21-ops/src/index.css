@@ -125,7 +125,6 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
-  margin-bottom: auto;
 }
 
 .nav a {
@@ -164,7 +163,7 @@ textarea {
 }
 
 .reset {
-  margin-top: 1rem;
+  margin-top: auto;
   align-self: flex-start;
 }
 
