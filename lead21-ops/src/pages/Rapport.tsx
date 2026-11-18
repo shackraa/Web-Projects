@@ -133,7 +133,7 @@ export function Rapport() {
           <section className="panel">
             <div className="panel-head">
               <h2>{focus} — zaman çizelgesi</h2>
-              <Link to={`/fellows/${encodeURIComponent(focus)}`}>Profil →</Link>
+              <Link to={`/fellows/${encodeURIComponent(focus)}`}>Profil</Link>
             </div>
             {timeline.length === 0 ? (
               <p className="muted">Kayıt yok.</p>

@@ -86,11 +86,20 @@ export async function POST(request: Request): Promise<Response> {
     return json({ ok: false, mode: "hata", detail: "çok fazla alıcı" }, 400);
   }
 
+  const allowDomain =
+    process.env.MAIL_ALLOW_DOMAIN?.trim().toLowerCase() || "ornek.lead21";
   const messages: Msg[] = [];
   for (const item of list) {
     const v = validateMessage(item);
     if (typeof v === "string") {
       return json({ ok: false, mode: "hata", detail: v }, 400);
+    }
+    const domain = v.to.split("@")[1]?.toLowerCase() ?? "";
+    if (domain !== allowDomain) {
+      return json(
+        { ok: false, mode: "hata", detail: "alıcı domain izinli değil" },
+        403,
+      );
     }
     messages.push(v);
   }

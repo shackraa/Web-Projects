@@ -72,7 +72,7 @@ export default function App() {
         <button type="button" className="btn ghost reset" onClick={resetDemo}>
           Demo veriyi sıfırla
         </button>
-        <p className="side-foot">Anthropic Sans · aşama → puan</p>
+        <p className="side-foot">Aşama kaynağı; puan türetilir</p>
       </aside>
       <main className="main">
         <Routes>
@@ -93,10 +93,10 @@ export default function App() {
       </main>
       <div className="sticky-cta" aria-label="Hızlı aksiyon">
         <NavLink className="btn" to="/mail">
-          Mail yaz
+          Mail
         </NavLink>
-        <NavLink className="btn ghost" to="/#mudahale">
-          Müdahale
+        <NavLink className="btn ghost" to="/">
+          Bu ay
         </NavLink>
       </div>
     </div>

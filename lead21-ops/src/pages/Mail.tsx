@@ -151,9 +151,9 @@ export function MailPage() {
       <header className="page-head">
         <div>
           <p className="eyebrow">İletişim</p>
-          <h1>Super Mario zinciri</h1>
+          <h1>Aşamalı uyarı maili</h1>
           <p className="lede">
-            Nazik → net → disiplin. Doz fellow’da birikir; Resend yoksa örnek log.
+            Nazik, net, disiplin — üç seviye. Her gönderimde doz artar. Resend yoksa örnek log.
           </p>
         </div>
         <div className="toolbar">

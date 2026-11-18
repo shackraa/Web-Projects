@@ -21,7 +21,7 @@ export function YearPlan() {
           </p>
         </div>
         <Link className="btn ghost" to="/rapor">
-          Fellow rapor →
+          Fellow rapor
         </Link>
       </header>
 

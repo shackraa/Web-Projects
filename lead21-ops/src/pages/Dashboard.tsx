@@ -83,7 +83,7 @@ export function Dashboard() {
           <p className="eyebrow">Erşen · {PERIOD.name}</p>
           <h1>Bu ay · {flow.month}</h1>
           <p className="lede">
-            Ay şeridi, müdahale kuyruğu ve ısı haritası — Excel sekmeleri değil, günlük iş.
+            Bu ayın odakları, kim müdahale bekliyor, kritik modüllerde durum.
           </p>
         </div>
         <div className="stat-pills">
@@ -123,7 +123,7 @@ export function Dashboard() {
       <section className="panel mb">
         <div className="panel-head">
           <h2>{flow.month} odakları</h2>
-          <Link to="/plan">Yıllık plan →</Link>
+          <Link to="/plan">Yıllık plan</Link>
         </div>
         <div className="tag-row">
           {flow.items.map((item) => (
@@ -159,7 +159,7 @@ export function Dashboard() {
         <section className="panel" id="mudahale">
           <div className="panel-head">
             <h2>Müdahale kuyruğu</h2>
-            <Link to="/mail">Mail zinciri →</Link>
+            <Link to="/mail">Mail zinciri</Link>
           </div>
           {interventions.length === 0 ? (
             <p className="muted">Şu an kritik müdahale yok.</p>
@@ -187,7 +187,7 @@ export function Dashboard() {
                       }&dose=${Math.min(3, (i.dose || 0) + 1)}`}
                       onClick={() => bumpWarn(i.fellow)}
                     >
-                      Yaz →
+                      Yaz
                     </Link>
                   </div>
                 </li>
@@ -199,7 +199,7 @@ export function Dashboard() {
         <section className="panel">
           <div className="panel-head">
             <h2>Erşen hatırlatmaları</h2>
-            <Link to="/gorevler">Görevler →</Link>
+            <Link to="/gorevler">Görevler</Link>
           </div>
           <ul className="list compact">
             {opsTasks.map((t) => (
@@ -220,7 +220,7 @@ export function Dashboard() {
       <section className="panel mt-block">
         <div className="panel-head">
           <h2>Isı haritası · 21 × kritik modül</h2>
-          <Link to="/fellows">Fellow’lar →</Link>
+          <Link to="/fellows">Fellow’lar</Link>
         </div>
         <div className="heat-wrap">
           <table className="table heat dense">

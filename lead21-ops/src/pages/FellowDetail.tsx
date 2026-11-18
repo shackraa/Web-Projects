@@ -66,7 +66,7 @@ export function FellowDetail() {
     return (
       <div className="page">
         <p>Fellow bulunamadı.</p>
-        <Link to="/fellows">← Liste</Link>
+        <Link to="/fellows">Listeye dön</Link>
       </div>
     );
   }
@@ -86,7 +86,7 @@ export function FellowDetail() {
       <header className="page-head">
         <div>
           <Link className="back" to="/fellows">
-            ← Fellow’lar
+            Fellow listesi
           </Link>
           <h1>{fellowName}</h1>
           <p className="lede">
@@ -98,10 +98,10 @@ export function FellowDetail() {
         </div>
         <div className="toolbar">
           <Link className="btn ghost" to={`/rapor`}>
-            Rapor →
+            Rapor
           </Link>
           <Link className="btn ghost" to={`/mail?fellow=${encodeURIComponent(fellowName)}`}>
-            Mail →
+            Mail
           </Link>
         </div>
       </header>
@@ -117,7 +117,7 @@ export function FellowDetail() {
                 <li key={i.id}>
                   <div>
                     <strong>
-                      {mod?.label} → {st?.label}
+                      {mod?.label} / {st?.label}
                     </strong>
                     <span className="muted block tiny">
                       {i.issue || i.note || "Sorun"}
@@ -364,7 +364,7 @@ export function FellowDetail() {
         <div className="panel-head">
           <h2>Mentör eşleşmeleri</h2>
           <Link className="btn ghost sm" to="/mentorler">
-            Tümü →
+            Tümü
           </Link>
         </div>
         {mentors.filter((m) => m.fellow === fellowName).length === 0 ? (

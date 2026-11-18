@@ -37,7 +37,7 @@ export function FaqPage() {
           <p className="lede">Erşen paneli — beş net cevap.</p>
         </div>
         <Link className="btn ghost" to="/gizlilik">
-          Gizlilik →
+          Gizlilik
         </Link>
       </header>
       <div className="faq-list">

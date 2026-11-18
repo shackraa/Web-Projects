@@ -739,7 +739,7 @@ LEAD21`,
   },
 ] as const;
 
-/** Super Mario — aşamalı mail zincirleri (Erşen dili) */
+/** Aşamalı uyarı zincirleri (Erşen: doz artırarak yaz) */
 export type MailChainStep = {
   level: number;
   label: string;
@@ -756,7 +756,7 @@ export type MailChain = {
 export const MAIL_CHAINS: MailChain[] = [
   {
     id: "eksik-mario",
-    label: "Eksik teslim — Super Mario",
+    label: "Eksik teslim — aşamalı uyarı",
     steps: [
       {
         level: 1,
@@ -792,7 +792,7 @@ Erşen`,
   },
   {
     id: "baraj-mario",
-    label: "%80 baraj — Super Mario",
+    label: "%80 baraj — aşamalı uyarı",
     steps: [
       {
         level: 1,
